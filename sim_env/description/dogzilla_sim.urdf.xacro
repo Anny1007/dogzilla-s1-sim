@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<!-- 注意：註解內不要用「半形冒號+空格」, robot_description 會被 launch 當 YAML 解析而失敗
+  DOGZILLA S1 模擬專用模型 (由 champ_description/urdf/champ.urdf.xacro 複製修改, 原檔不動)
+  與原檔差異：
+    1. 所有碰撞形狀由 STL 三角網格改為 box 基本幾何體。
+       原因：Gazebo Classic 的 LiDAR 射線執行緒與物理執行緒同時存取 ODE trimesh 會段錯誤
+       (gdb 堆疊：RaySensor::UpdateImpl -> ODEMultiRayShape::UpdateRays -> dSpaceCollide2 -> SIGSEGV),
+       尤其 laser_link.STL 有 5 萬多個三角形。gzserver 一生成機器狗就崩潰 (exit -11) 即為此故。
+    2. LiDAR / 相機本體不設碰撞 (只留外觀), 相機感測器預設關閉 (xacro 參數 camera:=true 可開啟)。
+    3. 移除重複的第二個 IMU 感測器。
+-->
+<robot name="champ" xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:arg name="camera" default="false" />
+    <xacro:include filename="$(find champ_description)/urdf/properties.urdf.xacro" />
+   <xacro:include filename="$(find champ_description)/urdf/macros.xacro" />
+    <material name="black"><color rgba="0.15 0.15 0.15 1.0" /></material>
+
+    <link name="base_link">
+
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="${base_x_length} ${base_y_length} ${base_z_length}" />
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+               <mesh
+                    filename="file://$(find champ_description)/meshes/XGO/base_link.STL"  scale="2 2 2" /> 
+            </geometry>
+            <material name="black" />
+        </visual>
+    </link>
+    <link name="base_inertia">    
+        <inertial>
+            <origin xyz="0 0 0" />
+            <mass value="${base_mass}" />
+            <inertia ixx="${(1/12) * base_mass * (base_y_length * base_y_length + base_z_length * base_z_length)}" ixy="0.0" ixz="0.0"
+                     iyy="${(1/12) * base_mass * (base_x_length * base_x_length + base_z_length * base_z_length)}" iyz="0.0"
+                     izz="${(1/12) * base_mass * (base_x_length * base_x_length + base_y_length * base_y_length)}" />
+        </inertial>
+    </link>  
+    <joint name="base_link_to_base_inertia" type="fixed">    
+        <parent link="base_link"/>    
+        <child link="base_inertia"/>    
+        <origin rpy="0 0 0" xyz="0 0 0"/>  
+    </joint>  
+
+    <!-- <link name="world"/>
+
+    <joint name="fixed" type="fixed">
+        <parent link="world"/>
+        <child link="base_link"/>
+      </joint> -->
+    <gazebo reference="base_link">
+        <material>Gazebo/FlatBlack</material>
+    </gazebo>
+
+    <xacro:include filename="/description/leg_sim.xacro" />
+    <xacro:include filename="/description/sensors_sim.xacro" />
+
+    <!-- <xacro:include filename="$(find champ_description)/urdf/accessories.urdf.xacro" />  
+
+    <xacro:accessories 
+        base_name="base_link" 
+        base_length="${base_x_length}"
+        base_height="${base_z_length}"
+    />-->
+
+    <xacro:champ_leg leg="lf"/>
+    <xacro:champ_leg leg="lh"/>
+    <xacro:champ_leg leg="rf"/>
+    <xacro:champ_leg leg="rh"/>
+    
+    <gazebo>
+      <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+
+
+            <ros>
+                <namespace>/demo</namespace>
+                <argument>odom:=odom/ground_truth</argument>
+            </ros>
+    
+            <body_name>base_link</body_name>
+            <frame_name>world</frame_name>
+            <update_rate>10.0</update_rate>
+            <xyz_offset>0 0 0</xyz_offset>
+            <rpy_offset>0 0 0</rpy_offset>
+            <gaussian_noise>0.01</gaussian_noise>
+    
+    </plugin>
+    </gazebo>
+
+
+    <gazebo>
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+
+        <parameters>$(find champ_gazebo)/config/ros_control.yaml</parameters>
+      </plugin>
+    </gazebo>
+
+    <!-- <gazebo>
+        <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+    
+            <parameters>$(find champ_gazebo)/config/ros_control.yaml</parameters>
+          </plugin>
+    </gazebo> -->
+</robot>

@@ -1,0 +1,8 @@
+label,leg,goal,status,success,time_s,path_m,final_err_m,min_clearance_m,collisions
+rl_v2,1,"(2.2,0.0)",SUCCEEDED,1,0.5,0.08,0.24,0.78,0
+rl_v2,2,"(-2.0,0.3)",TIMEOUT,0,150.0,37.56,3.08,0.24,0
+rl_v2,3,"(2.2,-1.8)",SUCCEEDED,1,26.2,6.41,0.24,0.19,0
+rl_v2,4,"(-2.0,-2.0)",SUCCEEDED,1,21.0,5.14,0.19,0.64,0
+rl_v2,5,"(2.2,1.8)",SUCCEEDED,1,115.9,28.9,0.23,0.22,0
+rl_v2,6,"(-1.8,1.8)",SUCCEEDED,1,22.6,5.7,0.24,0.23,0
+rl_v2,7,"(0.0,0.0)",SUCCEEDED,1,12.7,3.05,0.21,0.3,0

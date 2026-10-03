@@ -1,0 +1,19 @@
+# 可重建的檔案 (見 README.md「交付說明」)
+vendor/Program/yahboomcar_ws_ros2/build/
+vendor/Program/yahboomcar_ws_ros2/install/
+vendor/Program/yahboomcar_ws_ros2/log/
+sim_env/rl/.venv/
+__pycache__/
+*.pyc
+
+# 執行時輸出 (保留資料夾本身)
+sim_env/logs/*
+!sim_env/logs/.gitkeep
+sim_env/maps/*
+!sim_env/maps/.gitkeep
+
+# 本機工具設定與系統暫存檔
+.claude/
+.DS_Store
+._*
+.ipynb_checkpoints/

@@ -1,0 +1,51 @@
+# DOGZILLA S1 模擬用關節控制器 (由 champ_gazebo/config/ros_control.yaml 修改)
+# 原檔 PID p=100, d=1 是為較大的機器狗調的。官方 S1 模型小腿只有 23 g, 轉動慣量約 4e-5 kg·m²,
+# 之前用 p=10, d=0.03 (500 Hz) 時 d*dt/I 接近離散穩定極限, PID 在 ±0.44 N·m 之間顫振
+# (膝關節 60~76% 時間處於扭力飽和), 機身跟著抖。現在:
+#   - 控制頻率 1000 Hz, d 降到 0.005; 主要阻尼改由 URDF 的關節阻尼 0.01 + ODE implicitSpringDamper 提供
+#     (由物理引擎隱式求解, 不受慣量大小影響)
+#   - p=8: 誤差 0.055 rad 即達舵機扭力上限 0.44 N·m
+# 數值由 tools/gain_sweep.sh 掃描選出 (results/sweeps/gain_sweep.txt): 前進晃動 RMS 7.0° -> 2.0°, 扭力飽和 -> 0%
+controller_manager:
+  ros__parameters:
+    use_sim_time: True
+    update_rate: 1000  # Hz, 原 250; 與物理步 (1 ms) 相同
+    joint_states_controller:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    joint_group_effort_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+joint_group_effort_controller:
+  ros__parameters:
+    use_sim_time: True
+    joints:
+      - lf_hip_joint
+      - lf_upper_leg_joint
+      - lf_lower_leg_joint
+      - rf_hip_joint
+      - rf_upper_leg_joint
+      - rf_lower_leg_joint
+      - lh_hip_joint
+      - lh_upper_leg_joint
+      - lh_lower_leg_joint
+      - rh_hip_joint
+      - rh_upper_leg_joint
+      - rh_lower_leg_joint
+    command_interfaces:
+      - effort
+    state_interfaces:
+      - position
+      - velocity
+    gains:
+      lf_hip_joint        : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      lf_upper_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      lf_lower_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      rf_hip_joint        : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      rf_upper_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      rf_lower_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      lh_hip_joint        : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      lh_upper_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      lh_lower_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      rh_hip_joint        : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      rh_upper_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}
+      rh_lower_leg_joint  : {p: 8.0, i: 0.0, d: 0.005, i_clamp: 0.0}

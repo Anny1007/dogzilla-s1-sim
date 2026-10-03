@@ -1,0 +1,18 @@
+# DOGZILLA S1 步態參數 (由 champ_config/config/gait/gait.yaml 修改)
+# 用於官方 S1 模型 (description/dogzilla_s1_official.urdf.xacro), 數值由 tools/gain_sweep.sh 掃描選出 (results/sweeps/gain_sweep.txt):
+# 前進指令 0.2 m/s -> 實際約 0.12 m/s, 晃動 RMS 約 2°; 原地轉 0.8 rad/s -> 實際約 0.7 rad/s, 晃動 RMS 約 3.5°。
+/**:
+  ros__parameters:
+    gait:
+      knee_orientation : ">>"
+      pantograph_leg : false
+      odom_scaler: 0.9
+      max_linear_velocity_x : 0.20   # 安全上限: 0.25 m/s 以上再同時轉向, 機身傾斜達 30~40° 甚至翻倒 (tools/combo_test.py);
+                                     # 0.2 m/s 配任何轉向都在 8° 內。CHAMP 會把所有 /cmd_vel 截在此值
+      max_linear_velocity_y : 0.15
+      max_angular_velocity_z : 1.0
+      com_x_translation: 0.0
+      swing_height : 0.018     # 原 0.04; 官方模型掃描結果 (results/sweeps/gain_sweep.txt), 抬腳低晃動小
+      stance_depth : 0.00
+      stance_duration : 0.35   # 原 0.25; 0.25 時官方模型幾乎走不動
+      nominal_height : 0.105   # 原 0.20; S1 站立高度範圍 75 ~ 115 mm。須與 description/make_s1_official.py 的 STAND_H 一致

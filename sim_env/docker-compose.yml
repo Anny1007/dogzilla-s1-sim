@@ -1,0 +1,38 @@
+services:
+  dogzilla:
+    build:
+      context: .
+    image: dogzilla-sim:humble
+    container_name: dogzilla-sim
+    network_mode: host
+    privileged: true
+    shm_size: '2gb'  # Docker 默认 64MB /dev/shm 对 Gazebo+ROS2 DDS 共享内存明显偏小,
+                     # 怀疑是 gzserver 反复重启后诡异崩溃(exit 255, 无输出)的根因
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - ROS_DOMAIN_ID=30
+      # FastDDS (Humble 預設) 在節點多時常出現服務回應逾時 ("failed to send response ... timeout"),
+      # 讓 Nav2 lifecycle_manager 卡在 Configuring。改用 CycloneDDS。
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ../vendor/Program/yahboomcar_ws_ros2:/ws
+      - ../vendor/Program/DOGZILLA:/dogzilla_prog
+      - ../:/project
+      - ./description:/description   # 模擬專用機器人模型 (基本幾何體碰撞)
+      - ./launch:/launch             # 一鍵啟動整條管線
+      - ./config:/config             # 模擬用 SLAM 設定
+      - ./worlds:/worlds
+      - ./maps:/maps
+      - ./logs:/logs                 # 執行時輸出 (sim.log、新的 benchmark 結果)
+      - ./tools:/tools               # 診斷與測試工具
+      - ./rl:/rl
+      - ./benchmark_nav.py:/benchmark_nav.py
+      - ./nav2_params.yaml:/nav2_params.yaml
+      - ./nav2_params_rpp.yaml:/nav2_params_rpp.yaml
+    stdin_open: true
+    tty: true
+    command: bash

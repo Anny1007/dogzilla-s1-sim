@@ -1,0 +1,8 @@
+# 第一輪: 關節 PID / 關節阻尼 / 控制頻率 (步態: 抬腳 0.025 m, 支撐相 0.30 s), 官方 S1 模型 (右側髖部質量尚未對稱化)
+p=10.0000 d=0.0300 damp=0.002 hz=500 | SUMMARY drift=0.003 v=0.025 w=0.20 rms_walk=7.0 rms_turn=6.0 max=15.2 knee_sat%=63/76/66/58/
+p=10.0000 d=0.0300 damp=0.01 hz=1000 | SUMMARY drift=0.000 v=0.016 w=0.04 rms_walk=7.4 rms_turn=9.1 max=180.0 knee_sat%=12/41/32/47/
+p=8.0000 d=0.0050 damp=0.01 hz=1000 | SUMMARY drift=0.009 v=0.125 w=0.91 rms_walk=2.9 rms_turn=4.5 max=9.3 knee_sat%=0/0/0/0/
+p=6.0000 d=0.0030 damp=0.02 hz=1000 | SUMMARY drift=0.007 v=0.029 w=0.42 rms_walk=5.8 rms_turn=6.1 max=10.6 knee_sat%=0/0/0/0/
+p=15.0000 d=0.0050 damp=0.02 hz=1000 | SUMMARY drift=0.007 v=0.172 w=0.81 rms_walk=4.4 rms_turn=5.4 max=11.9 knee_sat%=1/0/15/7/
+p=20.0000 d=0.0100 damp=0.03 hz=1000 | SUMMARY drift=0.004 v=0.175 w=0.89 rms_walk=5.8 rms_turn=3.9 max=11.3 knee_sat%=0/1/28/9/
+# (max=180 表示該組在測試中翻倒)

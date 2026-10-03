@@ -1,0 +1,290 @@
+<?xml version="1.0"?>
+<!-- 注意：註解內不要用「半形冒號+空格」, robot_description 會被 launch 當 YAML 解析而失敗
+  DOGZILLA S1 模擬模型 (依實機尺寸建立)
+  連桿/關節名稱沿用 CHAMP (lf_hip_joint 等), 可直接配合 champ_config 的 joints.yaml / links.yaml 使用。
+
+  尺寸來源
+    官方 (Yahboom DOGZILLA 教材「04.Kinematics analysis theory / 1.Positive kinematics analysis」)
+      前後根關節中心間距 150 mm, 左右根關節中心間距 45 mm
+      基節 L1 = 31.6 mm, 大腿 L2 = 60 mm, 小腿 L3 = 75 mm
+      站立高度 75 ~ 115 mm (DOGZILLALib LEG_LIMIT / xGoHeight)
+      舵機 4.5 kg·cm (約 0.44 N·m), 每顆 20 g, 0.1 s/60° (教材「About servo」)
+    照片估計 (vendor/Photo/DOGZILLA照片.jpg, 以約 155 mm 寬的手把為比例尺)
+      機身約 200 x 78 mm, 含腿總長約 250 mm, 兩側腳掌間距約 110 mm (與官方 45 + 2 x 31.6 = 108 mm 相符)
+    推估 (找不到官方數字)
+      機身高度 55 mm, 總重約 1.2 kg (機身 0.68 kg + 每腿 0.13 kg)
+  LiDAR 依 S2 的配置裝在背上 (S1 原廠沒有 LiDAR, project.pptx 要自行加裝)。
+  碰撞形狀全用 box, 理由見 dogzilla_sim.urdf.xacro 說明 (trimesh 會讓 gzserver 崩潰, 腳掌要平底才不打滑)。
+-->
+<robot name="champ" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="camera" default="false" />
+
+  <!-- ===== 尺寸 (m, kg) ===== -->
+  <xacro:property name="hip_x" value="0.075" />          <!-- 前後根關節間距 150 mm 的一半 -->
+  <xacro:property name="hip_y" value="0.0225" />         <!-- 左右根關節間距 45 mm 的一半 -->
+  <xacro:property name="l1" value="0.0316" />            <!-- 基節 -->
+  <xacro:property name="l2" value="0.060" />             <!-- 大腿 -->
+  <xacro:property name="l3" value="0.075" />             <!-- 小腿 -->
+  <xacro:property name="body_x" value="0.200" />
+  <xacro:property name="body_y" value="0.078" />
+  <xacro:property name="body_z" value="0.055" />
+  <xacro:property name="body_mass" value="0.68" />
+  <xacro:property name="hip_mass" value="0.040" />
+  <xacro:property name="upper_mass" value="0.060" />
+  <xacro:property name="lower_mass" value="0.030" />
+  <xacro:property name="servo_effort" value="0.44" />    <!-- 4.5 kg·cm -->
+  <xacro:property name="servo_velocity" value="10.5" />  <!-- 0.1 s/60° ≈ 10.5 rad/s -->
+  <!-- 生成時的站立姿勢 (須與 config/gait_s1.yaml 的 nominal_height 一致)。
+       腳掌在髖關節正下方 stand_h 處, 由三角形 (L2, L3, stand_h) 餘弦定理求大腿與膝關節角度。
+       舵機只有 0.44 N·m, 若以關節 0 度 (腿伸直) 生成, 控制器啟動前機身就會趴下而且撐不起來。 -->
+  <xacro:property name="stand_h" value="0.105" />
+  <xacro:property name="stand_upper" value="${acos((l2*l2 + stand_h*stand_h - l3*l3) / (2*l2*stand_h))}" />
+  <xacro:property name="stand_lower" value="${-(pi - acos((l2*l2 + l3*l3 - stand_h*stand_h) / (2*l2*l3)))}" />
+
+  <material name="s1_grey"><color rgba="0.45 0.47 0.50 1.0" /></material>
+  <material name="s1_dark"><color rgba="0.12 0.12 0.12 1.0" /></material>
+
+  <xacro:macro name="box_inertial" params="m x y z *origin">
+    <inertial>
+      <xacro:insert_block name="origin" />
+      <mass value="${m}" />
+      <inertia ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0" iyy="${m*(x*x+z*z)/12}" iyz="0" izz="${m*(x*x+y*y)/12}" />
+    </inertial>
+  </xacro:macro>
+
+  <!-- ===== 機身 ===== -->
+  <link name="base_link">
+    <visual>
+      <geometry><box size="${body_x} ${body_y} ${body_z}" /></geometry>
+      <material name="s1_grey" />
+    </visual>
+    <collision>
+      <geometry><box size="${body_x} ${body_y} ${body_z}" /></geometry>
+    </collision>
+  </link>
+  <link name="base_inertia">
+    <xacro:box_inertial m="${body_mass}" x="${body_x}" y="${body_y}" z="${body_z}"><origin xyz="0 0 0" /></xacro:box_inertial>
+  </link>
+  <joint name="base_link_to_base_inertia" type="fixed">
+    <parent link="base_link" /><child link="base_inertia" />
+  </joint>
+  <gazebo reference="base_link"><material>Gazebo/Grey</material></gazebo>
+
+  <!-- ===== 腿 =====
+       根關節 (hip, 繞 x 軸) 在機身側面; 往外 L1 是大腿關節 (upper_leg, 繞 y 軸); 往下 L2 是膝關節; 再往下 L3 是腳掌。 -->
+  <xacro:macro name="s1_leg" params="leg sx sy">
+    <link name="${leg}_hip_debug_link" />
+    <joint name="${leg}_debug_joint" type="fixed">
+      <parent link="base_link" /><child link="${leg}_hip_debug_link" />
+      <origin xyz="${sx*hip_x} ${sy*hip_y} 0" />
+    </joint>
+
+    <!-- 基節：根關節舵機 + 支架 -->
+    <link name="${leg}_hip_link">
+      <visual>
+        <origin xyz="0 ${sy*l1/2} 0" />
+        <geometry><box size="0.040 ${l1} 0.030" /></geometry>
+        <material name="s1_dark" />
+      </visual>
+      <collision>
+        <origin xyz="0 ${sy*l1/2} 0" />
+        <geometry><box size="0.040 ${l1} 0.030" /></geometry>
+      </collision>
+      <xacro:box_inertial m="${hip_mass}" x="0.040" y="${l1}" z="0.030"><origin xyz="0 ${sy*l1/2} 0" /></xacro:box_inertial>
+    </link>
+    <joint name="${leg}_hip_joint" type="revolute">
+      <parent link="base_link" /><child link="${leg}_hip_link" />
+      <origin xyz="${sx*hip_x} ${sy*hip_y} 0" />
+      <axis xyz="1 0 0" />
+      <limit effort="${servo_effort}" velocity="${servo_velocity}" lower="-${pi}" upper="${pi}" />
+      <dynamics damping="0.002" />
+    </joint>
+
+    <!-- 大腿：舵機 + 鋁支架 -->
+    <link name="${leg}_upper_leg_link">
+      <visual>
+        <origin xyz="0 0 -${l2/2}" />
+        <geometry><box size="0.024 0.022 ${l2 + 0.02}" /></geometry>
+        <material name="s1_grey" />
+      </visual>
+      <collision>
+        <origin xyz="0 0 -${l2/2}" />
+        <geometry><box size="0.024 0.022 ${l2 + 0.02}" /></geometry>
+      </collision>
+      <xacro:box_inertial m="${upper_mass}" x="0.024" y="0.022" z="${l2}"><origin xyz="0 0 -${l2/2}" /></xacro:box_inertial>
+    </link>
+    <joint name="${leg}_upper_leg_joint" type="revolute">
+      <parent link="${leg}_hip_link" /><child link="${leg}_upper_leg_link" />
+      <origin xyz="0 ${sy*l1} 0" />
+      <axis xyz="0 1 0" />
+      <limit effort="${servo_effort}" velocity="${servo_velocity}" lower="-${pi}" upper="${pi}" />
+      <dynamics damping="0.002" />
+    </joint>
+
+    <!-- 小腿：平底 box, 底面剛好在腳掌 (foot_link) 高度 -->
+    <link name="${leg}_lower_leg_link">
+      <visual>
+        <origin xyz="0 0 -${l3/2}" />
+        <geometry><box size="0.018 0.018 ${l3}" /></geometry>
+        <material name="s1_grey" />
+      </visual>
+      <collision>
+        <origin xyz="0 0 -${l3/2}" />
+        <geometry><box size="0.018 0.018 ${l3}" /></geometry>
+      </collision>
+      <xacro:box_inertial m="${lower_mass}" x="0.018" y="0.018" z="${l3}"><origin xyz="0 0 -${l3/2}" /></xacro:box_inertial>
+    </link>
+    <joint name="${leg}_lower_leg_joint" type="revolute">
+      <parent link="${leg}_upper_leg_link" /><child link="${leg}_lower_leg_link" />
+      <origin xyz="0 0 -${l2}" />
+      <axis xyz="0 1 0" />
+      <limit effort="${servo_effort}" velocity="${servo_velocity}" lower="-${pi}" upper="${pi}" />
+      <dynamics damping="0.002" />
+    </joint>
+    <gazebo reference="${leg}_lower_leg_link">
+      <mu1>1.5</mu1><mu2>1.5</mu2>
+      <kp>1000000.0</kp><kd>50.0</kd>
+      <minDepth>0.001</minDepth><maxVel>0.1</maxVel>
+      <material>Gazebo/Grey</material>
+    </gazebo>
+    <gazebo reference="${leg}_upper_leg_link"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${leg}_hip_link"><material>Gazebo/DarkGrey</material></gazebo>
+
+    <link name="${leg}_foot_link" />
+    <joint name="${leg}_foot_joint" type="fixed">
+      <parent link="${leg}_lower_leg_link" /><child link="${leg}_foot_link" />
+      <origin xyz="0 0 -${l3}" />
+    </joint>
+
+    <xacro:s1_joint_control joint="${leg}_hip_joint" initial="0.0" />
+    <xacro:s1_joint_control joint="${leg}_upper_leg_joint" initial="${stand_upper}" />
+    <xacro:s1_joint_control joint="${leg}_lower_leg_joint" initial="${stand_lower}" />
+  </xacro:macro>
+
+  <xacro:macro name="s1_joint_control" params="joint initial">
+    <ros2_control name="${joint}" type="system">
+      <hardware><plugin>gazebo_ros2_control/GazeboSystem</plugin></hardware>
+      <joint name="${joint}">
+        <command_interface name="effort" />
+        <state_interface name="position"><param name="initial_value">${initial}</param></state_interface>
+        <state_interface name="velocity" />
+      </joint>
+    </ros2_control>
+  </xacro:macro>
+
+  <xacro:s1_leg leg="lf" sx="1" sy="1" />
+  <xacro:s1_leg leg="rf" sx="1" sy="-1" />
+  <xacro:s1_leg leg="lh" sx="-1" sy="1" />
+  <xacro:s1_leg leg="rh" sx="-1" sy="-1" />
+
+  <!-- ===== LiDAR (依 S2 配置, 背上偏後) ===== 外殼不設碰撞; 射線從頂部發出 -->
+  <link name="laser_link">
+    <visual>
+      <origin xyz="0 0 0.02" />
+      <geometry><cylinder radius="0.035" length="0.04" /></geometry>
+      <material name="s1_dark" />
+    </visual>
+    <inertial><mass value="0.05" /><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5" /></inertial>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link" /><child link="laser_link" />
+    <origin xyz="-0.030 0 ${body_z/2}" />
+  </joint>
+  <gazebo reference="laser_link">
+    <material>Gazebo/Black</material>
+    <sensor name="laser_sensor" type="ray">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <pose>0 0 0.035 0 0 0</pose>
+      <ray>
+        <scan><horizontal><samples>360</samples><resolution>1</resolution><min_angle>0</min_angle><max_angle>6.28</max_angle></horizontal></scan>
+        <range><min>0.12</min><max>3.5</max><resolution>0.015</resolution></range>
+        <noise><type>gaussian</type><mean>0.0</mean><stddev>0.01</stddev></noise>
+      </ray>
+      <plugin name="laserscan" filename="libgazebo_ros_ray_sensor.so">
+        <ros><remapping>~/out:=scan</remapping></ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>laser_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ===== 相機 (機身前端) ===== 預設不開感測器, 只有外觀 -->
+  <link name="camera_link">
+    <visual>
+      <origin xyz="-0.008 0 0" />
+      <geometry><box size="0.016 0.03 0.03" /></geometry>
+      <material name="s1_dark" />
+    </visual>
+    <inertial><mass value="0.01" /><inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" /></inertial>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link" /><child link="camera_link" />
+    <origin xyz="${body_x/2 + 0.008} 0 0.015" />
+  </joint>
+  <xacro:if value="$(arg camera)">
+    <gazebo reference="camera_link">
+      <sensor name="camera" type="camera">
+        <update_rate>15</update_rate>
+        <camera><horizontal_fov>1.8</horizontal_fov><image><width>640</width><height>480</height></image><clip><near>0.02</near><far>10</far></clip></camera>
+        <plugin name="camera_plugin" filename="libgazebo_ros_camera.so"><camera_name>cam</camera_name><frame_name>camera_link</frame_name></plugin>
+      </sensor>
+    </gazebo>
+  </xacro:if>
+
+  <!-- ===== IMU (實機為 9 軸 IMU) ===== -->
+  <link name="imu_link">
+    <inertial><mass value="0.005" /><inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" /></inertial>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link" /><child link="imu_link" />
+  </joint>
+  <gazebo reference="imu_link">
+    <sensor name="yahboom_imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <imu>
+        <angular_velocity>
+          <x><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>2e-4</stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x><noise type="gaussian"><mean>0</mean><stddev>1.7e-2</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>1.7e-2</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>1.7e-2</stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+      <plugin name="yahboom_imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+        <frame_name>imu_link</frame_name>
+        <ros><namespace>/imu</namespace><remapping>~/out:=data</remapping></ros>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ===== Gazebo 外掛 ===== -->
+  <gazebo>
+    <plugin name="yahboomcar_joint_state" filename="libgazebo_ros_joint_state_publisher.so">
+      <ros><remapping>~/out:=joint_states</remapping></ros>
+      <update_rate>15</update_rate>
+      <joint_name>lf_hip_joint</joint_name><joint_name>lf_upper_leg_joint</joint_name><joint_name>lf_lower_leg_joint</joint_name>
+      <joint_name>rf_hip_joint</joint_name><joint_name>rf_upper_leg_joint</joint_name><joint_name>rf_lower_leg_joint</joint_name>
+      <joint_name>lh_hip_joint</joint_name><joint_name>lh_upper_leg_joint</joint_name><joint_name>lh_lower_leg_joint</joint_name>
+      <joint_name>rh_hip_joint</joint_name><joint_name>rh_upper_leg_joint</joint_name><joint_name>rh_lower_leg_joint</joint_name>
+    </plugin>
+    <!-- 真值位姿 (只給 benchmark 評分與 RL 節點用) -->
+    <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+      <ros><namespace>/demo</namespace><argument>odom:=odom/ground_truth</argument></ros>
+      <body_name>base_link</body_name>
+      <frame_name>world</frame_name>
+      <update_rate>10.0</update_rate>
+      <gaussian_noise>0.01</gaussian_noise>
+    </plugin>
+    <!-- 關節 PID 依 S1 的輕量腿重新調整, 見 /config/ros_control_s1.yaml -->
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      <parameters>/config/ros_control_s1.yaml</parameters>
+    </plugin>
+  </gazebo>
+</robot>

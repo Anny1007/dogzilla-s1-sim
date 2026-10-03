@@ -1,0 +1,21 @@
+# ROS 2 工作區編譯自動產生的資料夾
+build/
+install/
+log/
+
+# Python 快取與編譯檔
+__pycache__/
+*.py[cod]
+
+# C++ 編譯中介檔
+*.o
+*.so
+*.os
+
+# 作業系統產生的暫存檔 (macOS / Windows)
+.DS_Store
+Thumbs.db
+
+# 編輯器/IDE 的設定檔
+.vscode/
+.idea/

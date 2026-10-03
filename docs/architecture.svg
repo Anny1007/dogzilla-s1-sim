@@ -1,0 +1,101 @@
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="1600" height="900" fill="#faf6ec"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1b3a63"/></marker>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#8a5a2f"/></marker>
+  </defs>
+
+  <!-- column headers -->
+  <text x="380" y="60" font-size="30" font-weight="bold" fill="#1b3a63" text-anchor="middle">Perception &amp; Planning</text>
+  <text x="380" y="86" font-size="16" fill="#5b6b7c" text-anchor="middle">(Raspberry Pi 4B · ROS 2)</text>
+
+  <text x="850" y="60" font-size="30" font-weight="bold" fill="#1b3a63" text-anchor="middle">ROS 2 Topics</text>
+  <text x="850" y="86" font-size="16" fill="#5b6b7c" text-anchor="middle">(Communication)</text>
+
+  <text x="1300" y="60" font-size="30" font-weight="bold" fill="#1b3a63" text-anchor="middle">Decision &amp; Control</text>
+  <text x="1300" y="86" font-size="16" fill="#5b6b7c" text-anchor="middle">(Raspberry Pi 4B · ROS 2)</text>
+
+  <!-- dotted column separators -->
+  <line x1="700" y1="30" x2="700" y2="860" stroke="#b9b0a0" stroke-dasharray="3,5"/>
+  <line x1="1005" y1="30" x2="1005" y2="860" stroke="#b9b0a0" stroke-dasharray="3,5"/>
+
+  <!-- Environment -->
+  <text x="60" y="300" font-size="26" font-weight="bold" fill="#26313d">Environment</text>
+  <g transform="translate(55,340)">
+    <circle cx="55" cy="-18" r="15" fill="#4f7fbf"/>
+    <rect x="18" y="0" width="75" height="50" rx="8" fill="#2f3b46"/>
+    <rect x="8" y="50" width="16" height="32" fill="#2f3b46"/>
+    <rect x="103" y="50" width="16" height="32" fill="#2f3b46"/>
+  </g>
+
+  <!-- sensing arrow: robot -> LiDAR -->
+  <path d="M120,340 C150,300 170,240 205,205" fill="none" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="95" y="270" font-size="14" fill="#1b3a63">sensing</text>
+
+  <!-- actuation arrow: Motion Control -> robot (feedback loop) -->
+  <path d="M1105,485 C 650,600 300,560 115,410" fill="none" stroke="#8a5a2f" stroke-width="2" stroke-dasharray="6,5" marker-end="url(#arrow2)"/>
+  <text x="560" y="610" font-size="14.5" fill="#8a5a2f" text-anchor="middle">/cmd_vel  (walk speed → actuators)</text>
+
+  <!-- Perception & Planning dotted container -->
+  <rect x="195" y="120" width="440" height="440" rx="10" fill="none" stroke="#b9b0a0" stroke-dasharray="3,5"/>
+
+  <!-- LiDAR Sensing -->
+  <rect x="230" y="160" width="370" height="90" rx="6" fill="#ffffff" stroke="#26313d" stroke-width="1.5"/>
+  <text x="415" y="195" font-size="21" font-weight="bold" fill="#1b1b1b" text-anchor="middle">LiDAR Sensing</text>
+  <text x="415" y="222" font-size="15" fill="#5b6b7c" text-anchor="middle">distance to obstacles (360 pts)</text>
+
+  <!-- SLAM -->
+  <rect x="230" y="290" width="370" height="90" rx="6" fill="#ffffff" stroke="#26313d" stroke-width="1.5"/>
+  <text x="415" y="325" font-size="21" font-weight="bold" fill="#1b1b1b" text-anchor="middle">SLAM</text>
+  <text x="415" y="352" font-size="15" fill="#5b6b7c" text-anchor="middle">map + robot pose</text>
+
+  <!-- Nav2 Path Planning -->
+  <rect x="230" y="420" width="370" height="90" rx="6" fill="#ffffff" stroke="#26313d" stroke-width="1.5"/>
+  <text x="415" y="455" font-size="21" font-weight="bold" fill="#1b1b1b" text-anchor="middle">Nav2 Path Planning</text>
+  <text x="415" y="482" font-size="15" fill="#5b6b7c" text-anchor="middle">global route + next waypoint</text>
+
+  <!-- internal vertical arrows -->
+  <line x1="415" y1="250" x2="415" y2="286" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="415" y1="380" x2="415" y2="416" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Decision & Control container -->
+  <rect x="1080" y="160" width="440" height="350" rx="10" fill="none" stroke="#245a8f" stroke-width="2"/>
+
+  <!-- Obstacle Avoidance / RL -->
+  <rect x="1105" y="185" width="390" height="240" rx="6" fill="#ffffff" stroke="#245a8f" stroke-width="2"/>
+  <text x="1300" y="218" font-size="21" font-weight="bold" fill="#1b1b1b" text-anchor="middle">Obstacle Avoidance</text>
+  <text x="1300" y="242" font-size="19" font-weight="bold" fill="#245a8f" text-anchor="middle">(Reinforcement Learning)</text>
+  <text x="1300" y="270" font-size="14" fill="#5b6b7c" text-anchor="middle">Trained by trial &amp; error in Gazebo;</text>
+  <text x="1300" y="288" font-size="14" fill="#5b6b7c" text-anchor="middle">real-robot deployment planned.</text>
+  <line x1="1125" y1="302" x2="1475" y2="302" stroke="#dcd6c8"/>
+  <text x="1125" y="326" font-size="14.5" fill="#26313d">State: scan (36) + goal direction</text>
+  <text x="1125" y="349" font-size="14.5" fill="#26313d">+ next waypoint from Nav2</text>
+  <text x="1125" y="372" font-size="14.5" fill="#26313d">Action: forward speed, turn rate</text>
+  <text x="1125" y="395" font-size="14.5" fill="#26313d">Reward: +goal, −collision</text>
+
+  <!-- Motion Control -->
+  <rect x="1105" y="440" width="390" height="90" rx="6" fill="#ffffff" stroke="#26313d" stroke-width="1.5"/>
+  <text x="1300" y="475" font-size="21" font-weight="bold" fill="#1b1b1b" text-anchor="middle">Motion Control</text>
+  <text x="1300" y="502" font-size="15" fill="#5b6b7c" text-anchor="middle">walk commands (gait)</text>
+
+  <line x1="1300" y1="425" x2="1300" y2="436" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ROS2 topic arrows crossing middle column -->
+  <line x1="600" y1="205" x2="1100" y2="250" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="850" y="215" font-size="14.5" fill="#1b3a63" text-anchor="middle">/scan</text>
+
+  <line x1="600" y1="465" x2="1100" y2="330" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="850" y="410" font-size="14.5" fill="#1b3a63" text-anchor="middle">/goal, next waypoint</text>
+
+  <!-- note -->
+  <text x="1300" y="545" font-size="13.5" fill="#8a5a2f" text-anchor="middle" font-style="italic">Alternative to Nav2's DWB / RPP local controller — compared, not stacked, in testing.</text>
+
+  <!-- legend -->
+  <g transform="translate(230,700)">
+    <line x1="0" y1="0" x2="40" y2="0" stroke="#1b3a63" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="52" y="5" font-size="15" fill="#26313d">sensor / planning data</text>
+    <line x1="0" y1="34" x2="40" y2="34" stroke="#8a5a2f" stroke-width="2" stroke-dasharray="6,5" marker-end="url(#arrow2)"/>
+    <text x="52" y="39" font-size="15" fill="#26313d">motor command (feedback to robot)</text>
+  </g>
+</svg>
