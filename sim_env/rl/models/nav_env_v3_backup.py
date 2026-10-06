@@ -20,9 +20,6 @@ v3: NavEnv(shield=True) 在动作执行前加上安全保护 (safety_shield.py, 
 v4: 转向抖动扣分。Gazebo 里 v3 在前进中每 0.2~0.4 s 反转一次转向, 机身左右晃到翻倒 (tools/flip_monitor.py 纪录);
   2D 环境没有翻倒, 原本学不到要避开。前进中转向反转 (REVERSAL_PENALTY) 与转向变化量 x 速度 (STEER_RATE_PENALTY) 都扣分。
   两个权重是凭经验定的, 没有用翻倒的物理模型校准。
-v5: 速度模型改用 Gazebo 实测 (rl_policy.speed_model_measured): 低速死区、不能后退、快速转弯明显减速;
-  动作上限改为 0.15 m/s (0.2 m/s 加转向会翻倒), 最低 0 (不能后退)。v4 的转向扣分已停用。
-  v1~v3 的权重用 NavEnv(v_min, v_max, speed_model='linear') 评估。
   手工方块模型 (s1_box) 版本的权重在 models/s1_box/。
   旧 CHAMP 放大模型的版本与权重在 models/champ_old/ (COLLIDE_DIST 0.12, V_MAX 0.3, V_GAIN 0.7, W_GAIN 0.9)
 """
@@ -33,7 +30,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from rl_policy import local_target, SPEED_MODELS, V_TAU, W_TAU
+from rl_policy import local_target, speed_model, V_GAIN, V_TAU, TURN_SLOWDOWN, W_GAIN, W_TAU
 from safety_shield import SafetyShield
 
 DT = 0.1
@@ -41,9 +38,7 @@ N_RAYS, N_BINS = 360, 36
 R_MIN, R_MAX = 0.12, 3.5
 COLLIDE_DIST = 0.16    # S1 机身 200 x 78 mm (含相机 216 mm), 原地转时机身前角扫过半径约 0.13 m, 再留余量
 GOAL_RADIUS = 0.25
-V_MAX, W_MAX = 0.20, 1.0      # 观测里速度的归一化常数 (与 rl_policy 相同, 不要改)
-V_MIN, V_CMD_MAX = 0.0, 0.15  # v5 动作范围: S1 实测不能后退, 0.2 m/s 加转向会翻倒
-SPEED_MODEL = 'measured'      # v5 起用实测速度模型 (rl_policy.SPEED_MODELS)
+V_MIN, V_MAX, W_MAX = -0.05, 0.20, 1.0   # S1 安全速度上限 0.2 m/s (config/gait_s1.yaml); 允许慢速后退脱困
 # 速度反应参数 V_GAIN / V_TAU / TURN_SLOWDOWN / W_GAIN / W_TAU 在 rl_policy.py (部署时也要用)
 ACC_V, ACC_W = 0.5, 2.0       # 与 rl_controller.py 的输出加速度限制相同
 SAFE_DIST = 0.40              # 离障碍物小于此距离开始扣分
@@ -197,13 +192,12 @@ class Planner:
 
 
 class NavEnv(gym.Env):
-    def __init__(self, seed=None, v_min=V_MIN, shield=False, v_max=V_CMD_MAX, speed_model=SPEED_MODEL):
+    def __init__(self, seed=None, v_min=V_MIN, shield=False):
         self.action_space = spaces.Box(-1.0, 1.0, (2,), np.float32)
         self.observation_space = spaces.Box(-1.0, 1.0, (OBS_DIM,), np.float32)
         self.rng = np.random.default_rng(seed)
-        self.v_min, self.v_max = v_min, v_max     # 动作 -> 速度指令的范围; 评估旧权重时传它们自己的
-        self.speed = SPEED_MODELS[speed_model]
-        self.shield = SafetyShield(v_min, v_max, W_MAX, ACC_V, ACC_W, DT, tau_v=V_TAU, tau_w=W_TAU) if shield else None
+        self.v_min = v_min        # 评估旧权重 (不能后退) 时传 0
+        self.shield = SafetyShield(v_min, V_MAX, W_MAX, ACC_V, ACC_W, DT, tau_v=V_TAU, tau_w=W_TAU) if shield else None
         self.interventions = 0
         self.obstacles, self.walls = [], WALLS
 
@@ -306,10 +300,7 @@ class NavEnv(gym.Env):
         self.steps = 0
         self.gdist = self.planner.dist(self.x, self.y)
         path_len = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(self.path, self.path[1:]))
-        v_top = 0.0
-        for _ in range(100):                     # 速度模型在最高指令下的稳定速度
-            v_top, _ = self.speed(v_top, 0.0, self.v_max, 0.0, DT)
-        self.max_steps = int(min(2500, max(600, 2.0 * path_len / max(v_top, 0.05) / DT)))
+        self.max_steps = int(min(2000, max(600, 2.0 * path_len / (V_GAIN * V_MAX) / DT)))
         self.min_clear = 9.0
         self.interventions = 0
         self.reversals, self.last_turn = 0, 0   # 前进中转向反转次数, 上一次明显转向的方向
@@ -327,7 +318,7 @@ class NavEnv(gym.Env):
 
     def step(self, action):
         a = np.clip(action, -1, 1)
-        v_cmd = self.v_min + (self.v_max - self.v_min) * (a[0] + 1) / 2
+        v_cmd = self.v_min + (V_MAX - self.v_min) * (a[0] + 1) / 2
         w_cmd = W_MAX * a[1]
         shield_cost = 0.0
         w_prev = self.w_out
@@ -339,7 +330,7 @@ class NavEnv(gym.Env):
                 self.interventions += 1
                 v_i = float(np.clip(v_cmd, self.v_out - ACC_V * DT, self.v_out + ACC_V * DT))
                 w_i = float(np.clip(w_cmd, self.w_out - ACC_W * DT, self.w_out + ACC_W * DT))
-                shield_cost = math.hypot((v_i - v_s) / self.v_max, (w_i - w_s) / W_MAX)
+                shield_cost = math.hypot((v_i - v_s) / V_MAX, (w_i - w_s) / W_MAX)
             self.v_out, self.w_out = v_s, w_s
         else:
             self.v_out += float(np.clip(v_cmd - self.v_out, -ACC_V * DT, ACC_V * DT))
@@ -353,7 +344,7 @@ class NavEnv(gym.Env):
             self.last_turn = turn
         elif self.v_out <= REV_V:
             self.last_turn = 0      # 停下或原地转后重新开始算
-        self.v, self.w = self.speed(self.v, self.w, v_cmd, w_cmd, DT)
+        self.v, self.w = speed_model(self.v, self.w, v_cmd, w_cmd, DT)
         self.yaw += self.w * DT
         self.x += self.v * math.cos(self.yaw) * DT
         self.y += self.v * math.sin(self.yaw) * DT

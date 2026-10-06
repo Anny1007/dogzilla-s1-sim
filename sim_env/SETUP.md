@@ -160,13 +160,17 @@ env -u PYTHONPATH .venv/bin/pip install -r requirements.txt --extra-index-url ht
 ### 6.2 訓練
 
 ```bash
-env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run   # 訓練 400 萬步 (約 30 分鐘), 存到 models/my_run/
+env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓練 400 萬步 (約 70 分鐘), 存到 models/my_run/
 ```
 
 | 參數 | 說明 |
 |---|---|
 | 第 1 個 | 總訓練步數，預設 `2e6` |
 | 第 2 個 | 輸出資料夾，預設 `models`。**不指定會覆蓋部署用的 `models/policy.npz`** |
+| `--shield` | 訓練時加上安全保護（`rl/safety_shield.py`）。權重檔會記錄，部署時自動開啟 |
+
+訓練環境目前（v5）使用 Gazebo 實測的速度模型（`rl/rl_policy.py` 的 `speed_model_measured`），動作範圍 0～0.15 m/s。
+速度模型與動作範圍都會寫進權重檔，部署節點會照著用，所以舊權重（v1～v3）仍照原本的設定執行。
 
 輸出資料夾裡會有：
 
@@ -176,12 +180,14 @@ env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run   # 訓練 400 萬
 | `ppo_nav.zip` | 完整的 stable-baselines3 模型 |
 | `progress.csv` | 每次更新的 loss、entropy、KL、平均回報等訓練紀錄 |
 | `eval.csv` | 每 10 萬步在 200 個固定場景的到達 / 碰撞 / 逾時次數 |
+| `best/` | 訓練過程中評估到達數最高的模型（`policy.npz` + `ppo_nav.zip`），通常比最後一步好 |
 
 ### 6.3 評估與畫圖
 
 ```bash
 # 在 2D 環境比較多個模型 (舊測試場地、投影片場地、隨機場景各一組)
-env -u PYTHONPATH .venv/bin/python eval_compare.py "v1=models/policy.npz" "新=models/my_run/policy.npz"
+env -u PYTHONPATH .venv/bin/python eval_compare.py "v1=models/policy.npz" "新=models/my_run/best/policy.npz"
+# 路徑後面可加 +shield (強制開安全保護)、+measured (改用實測速度模型), 例如 "v3=models/s1_v3_shield/best/policy.npz+measured"
 
 # 畫訓練曲線 (用模擬映像裡的 matplotlib, 主機不用另外安裝)
 cd ..
@@ -194,9 +200,20 @@ docker run --rm -v "$PWD":/w -v /usr/share/fonts/opentype/noto:/fonts:ro -w /w d
 ### 6.4 放進 Gazebo 測試
 
 ```bash
-./run.sh sim rl rl_policy:=/rl/models/my_run/policy.npz
+./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz
 ./run.sh bench my_run rl
 ```
+
+部署節點（`rl/rl_controller.py`）可用的啟動參數：
+
+| 參數 | 預設 | 說明 |
+|---|---|---|
+| `rl_policy` | `/rl/models/policy.npz` | 權重檔 |
+| `rl_shield` | `auto` | 安全保護：`auto`（依權重檔）、`on`、`off` |
+| `rl_vel_obs` | `model` | 觀測裡的目前速度：`model`（由指令推算，與訓練一致）、`odom`（腿部里程計，會隨步伐擺動） |
+
+部署節點每 2 秒向 Nav2 重新規劃一次路徑，並發佈 `/rl_intent`（安全保護之前 RL 想要的速度），方便診斷。
+S1 在 Gazebo 的實際速度反應可以用 `tools/speed_response.py` 量測（需以空場地啟動，見檔頭說明）。
 
 確認比較好之後，再把 `policy.npz` 複製到 `rl/models/policy.npz` 成為預設權重（建議先備份舊的）。
 

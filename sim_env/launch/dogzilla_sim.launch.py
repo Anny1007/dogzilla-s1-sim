@@ -29,7 +29,7 @@ MODELS = {
     's1':     dict(description='/description/dogzilla_s1_official.urdf.xacro', gait='/config/gait_s1.yaml',
                    spawn_z='0.10', scan_height='0.18',
                    # 官方模型: laser_link 在 base_link x=-0.0167; 機身 x -0.106~0.103, 髖+腿外緣 |y| 約 0.075
-                   self_box='[-0.10, 0.13, 0.08]'),
+                   self_box='[-0.10, 0.16, 0.08]'),   # 前緣 0.13 -> 0.16: 實測機身回波在 x 0.116~0.147 m, 漏網的點會讓 RL 安全保護以為正前方有障礙物而卡住
     's1_box': dict(description='/description/dogzilla_s1.urdf.xacro', gait='/config/gait_s1.yaml',
                    spawn_z='0.125', scan_height='0.16',
                    self_box='[-0.12, 0.16, 0.08]'),   # 機身+髖關節+腿 (laser_link 座標), 見 scan_ground_filter.py
@@ -135,7 +135,8 @@ def generate_launch_description():
                  output='screen', condition=IfCondition(is_rl),
                  parameters=[{'use_sim_time': True, 'autostart': True, 'node_names': ['planner_server']}])]),
         Node(executable='/rl/rl_controller.py', name='rl_controller', output='screen', condition=IfCondition(is_rl),
-             parameters=[{'policy': LaunchConfiguration('rl_policy')}],
+             parameters=[{'policy': LaunchConfiguration('rl_policy'), 'shield': LaunchConfiguration('rl_shield'),
+                         'vel_obs': LaunchConfiguration('rl_vel_obs')}],
              remappings=[('/scan', '/scan_filtered'), ('/cmd_vel', '/cmd_vel_raw')]),
     ]
 
@@ -160,6 +161,10 @@ def generate_launch_description():
         DeclareLaunchArgument('controller', default_value='dwb', description='dwb | rpp | rl'),
         DeclareLaunchArgument('rl_policy', default_value='/rl/models/policy.npz',
                               description='controller:=rl 時使用的權重檔, 例 /rl/models/s1_v2/policy.npz'),
+        DeclareLaunchArgument('rl_shield', default_value='auto',
+                              description='RL 安全保護: auto (依權重檔) | on | off'),
+        DeclareLaunchArgument('rl_vel_obs', default_value='model',
+                              description='RL 觀測裡的目前速度: model (由指令推算, 與訓練一致) | odom (腿部里程計, 會隨步伐擺動)'),
         DeclareLaunchArgument('gui', default_value='true', description='開 Gazebo 畫面'),
         DeclareLaunchArgument('rviz', default_value='true'),
         DeclareLaunchArgument('model', default_value='s1', description='s1 (官方 URDF) | s1_box | champ'),
