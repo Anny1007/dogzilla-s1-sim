@@ -28,8 +28,10 @@ from launch_ros.substitutions import FindPackageShare
 MODELS = {
     's1':     dict(description='/description/dogzilla_s1_official.urdf.xacro', gait='/config/gait_s1.yaml',
                    spawn_z='0.10', scan_height='0.18',
-                   # 官方模型: laser_link 在 base_link x=-0.0167; 機身 x -0.106~0.103, 髖+腿外緣 |y| 約 0.075
-                   self_box='[-0.10, 0.16, 0.08]'),   # 前緣 0.13 -> 0.16: 實測機身回波在 x 0.116~0.147 m, 漏網的點會讓 RL 安全保護以為正前方有障礙物而卡住
+                   # 官方模型: laser_link 在 base_link x=-0.06 (make_s1_official.py 的 LIDAR_X); 機身 x -0.106~0.103, 髖+腿外緣 |y| 約 0.075
+                   # LiDAR 在 x=-0.0167 時是 [-0.10, 0.16, 0.08] (實測機身回波在 x 0.116~0.147 m, 漏網的點會讓 RL 安全保護
+                   # 以為正前方有障礙物而卡住); LiDAR 後移 0.043 m, 前後緣跟著移
+                   self_box='[-0.06, 0.21, 0.08]'),
     's1_box': dict(description='/description/dogzilla_s1.urdf.xacro', gait='/config/gait_s1.yaml',
                    spawn_z='0.125', scan_height='0.16',
                    self_box='[-0.12, 0.16, 0.08]'),   # 機身+髖關節+腿 (laser_link 座標), 見 scan_ground_filter.py

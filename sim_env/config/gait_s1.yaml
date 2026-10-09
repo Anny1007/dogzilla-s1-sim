@@ -1,14 +1,15 @@
 # DOGZILLA S1 步態參數 (由 champ_config/config/gait/gait.yaml 修改)
 # 用於官方 S1 模型 (description/dogzilla_s1_official.urdf.xacro), 數值由 tools/gain_sweep.sh 掃描選出 (results/sweeps/gain_sweep.txt):
-# 前進指令 0.2 m/s -> 實際約 0.12 m/s, 晃動 RMS 約 2°; 原地轉 0.8 rad/s -> 實際約 0.7 rad/s, 晃動 RMS 約 3.5°。
+# 實機重量 (本體 875 g + LiDAR 45 g, 關節 p=14) 下: 前進指令 0.2 m/s -> 實際約 0.11 m/s, 晃動 RMS 約 2.5°;
+# 原地轉 0.8 rad/s -> 實際約 0.86 rad/s, 晃動 RMS 約 3.4° (results/sweeps/tune_875g_round3_lidar_x_repeat.txt)。站高/抬腳/支撐相在新重量下重新掃過, 維持原值。
 /**:
   ros__parameters:
     gait:
       knee_orientation : ">>"
       pantograph_leg : false
       odom_scaler: 0.9
-      max_linear_velocity_x : 0.20   # 安全上限: 0.25 m/s 以上再同時轉向, 機身傾斜達 30~40° 甚至翻倒 (tools/combo_test.py);
-                                     # 0.2 m/s 配任何轉向都在 8° 內。CHAMP 會把所有 /cmd_vel 截在此值
+      max_linear_velocity_x : 0.20   # 安全上限 (625 g 時量的: 0.25 m/s 以上再同時轉向, 機身傾斜達 30~40° 甚至翻倒, tools/combo_test.py;
+                                     # 920 g 下 0.25 以上沒有重測)。CHAMP 會把所有 /cmd_vel 截在此值
       max_linear_velocity_y : 0.15
       max_angular_velocity_z : 1.0
       com_x_translation: 0.0

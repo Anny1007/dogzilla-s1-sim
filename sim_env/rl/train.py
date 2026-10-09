@@ -1,5 +1,6 @@
-"""PPO 训练: python train.py [总步数] [输出目录] [--shield]  -> 模型存 <输出目录>/ppo_nav.zip, 部署权重存 <输出目录>/policy.npz
+"""PPO 训练: python train.py [总步数] [输出目录] [--shield] [--init=旧模型.zip]  -> 模型存 <输出目录>/ppo_nav.zip, 部署权重存 <输出目录>/policy.npz
 输出目录默认 models (会覆盖部署用的权重)。--shield: 训练时加上安全保护 (safety_shield.py), 权重档会记录, 部署时自动开启。
+--init=models/xxx/ppo_nav.zip: 从已有的模型接着训练 (微调), 学习率降为 1e-4; 不给就从零开始。
 评估到达数最高的模型另存 <输出目录>/best/ (ppo_nav.zip + policy.npz)。训练曲线 (loss / entropy / KL / 平均回报 ...) 存 <输出目录>/progress.csv,
 每 10 万步的到达/碰撞评估存 <输出目录>/eval.csv, 用 tools/plot_rl_training.py 画图。"""
 import os, sys, time
@@ -14,7 +15,8 @@ from nav_env import NavEnv, V_MIN, V_CMD_MAX, SPEED_MODEL
 
 torch.set_num_threads(1)
 SHIELD = '--shield' in sys.argv
-ARGS = [a for a in sys.argv[1:] if a != '--shield']
+INIT = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--init=')), None)
+ARGS = [a for a in sys.argv[1:] if not a.startswith('--')]
 TOTAL = int(float(ARGS[0])) if len(ARGS) > 0 else 2_000_000
 OUT = ARGS[1] if len(ARGS) > 1 else 'models'
 
@@ -67,9 +69,12 @@ if __name__ == '__main__':
     with open(f'{OUT}/eval.csv', 'w') as f:
         f.write('timesteps,goal,collision,timeout\n')
     env = make_vec_env(NavEnv, n_envs=8, vec_env_cls=SubprocVecEnv, env_kwargs={'shield': SHIELD})
-    model = PPO('MlpPolicy', env, n_steps=512, batch_size=512, learning_rate=3e-4, gamma=0.995, gae_lambda=0.95,
-                ent_coef=0.005, policy_kwargs=dict(net_arch=dict(pi=[64, 64], vf=[64, 64]), activation_fn=torch.nn.Tanh),
-                seed=0, verbose=0, device='cpu')
+    if INIT:
+        model = PPO.load(INIT, env=env, device='cpu', custom_objects={'learning_rate': 1e-4, 'lr_schedule': lambda _: 1e-4})
+    else:
+        model = PPO('MlpPolicy', env, n_steps=512, batch_size=512, learning_rate=3e-4, gamma=0.995, gae_lambda=0.95,
+                    ent_coef=0.005, policy_kwargs=dict(net_arch=dict(pi=[64, 64], vf=[64, 64]), activation_fn=torch.nn.Tanh),
+                    seed=0, verbose=0, device='cpu')
     model.set_logger(configure(OUT, ['csv']))     # 每次 rollout 后写一行 progress.csv
     model.learn(TOTAL, callback=EvalCB())
     model.save(f'{OUT}/ppo_nav'); export_npz(model, f'{OUT}/policy.npz')

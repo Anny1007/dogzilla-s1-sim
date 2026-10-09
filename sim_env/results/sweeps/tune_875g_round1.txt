@@ -1,0 +1,31 @@
+M=0.6115,LM=0.0141 | SUMMARY drift=0.010 v=0.131 w=0.75 rms_walk=1.6 rms_turn=3.5 max=4.8
+M=0.6115,LM=0.0141 | SUMMARY drift=0.010 v=0.095 w=0.00 rms_walk=52.0 rms_turn=180.0 max=180.0
+M=0.6115,LM=0.0141 | knee_sat%=0/0/0/0/
+P=8 | SUMMARY drift=0.011 v=0.017 w=0.57 rms_walk=21.0 rms_turn=3.6 max=41.1
+P=8 | SUMMARY drift=0.011 v=0.181 w=0.51 rms_walk=4.1 rms_turn=3.6 max=170.1
+P=8 | knee_sat%=0/0/0/0/
+P=14 | SUMMARY drift=0.010 v=0.120 w=0.81 rms_walk=2.5 rms_turn=3.8 max=5.6
+P=14 | SUMMARY drift=0.010 v=0.102 w=0.80 rms_walk=3.1 rms_turn=3.6 max=6.0
+P=14 | knee_sat%=0/1/29/7/
+P=20,D=0.01 | SUMMARY drift=0.011 v=0.047 w=0.60 rms_walk=3.8 rms_turn=4.9 max=7.9
+P=20,D=0.01 | SUMMARY drift=0.011 v=0.069 w=0.51 rms_walk=3.9 rms_turn=5.3 max=9.4
+P=20,D=0.01 | knee_sat%=8/4/10/9/
+H=0.115 | SUMMARY drift=0.010 v=0.082 w=0.02 rms_walk=119.2 rms_turn=133.7 max=172.6
+H=0.115 | SUMMARY drift=0.000 v=0.000 w=0.01 rms_walk=134.1 rms_turn=133.8 max=134.9
+H=0.115 | knee_sat%=0/0/0/0/
+H=0.115,P=14 | SUMMARY drift=0.009 v=0.088 w=0.56 rms_walk=2.9 rms_turn=6.2 max=12.9
+H=0.115,P=14 | SUMMARY drift=0.009 v=0.114 w=0.65 rms_walk=2.8 rms_turn=5.6 max=14.8
+H=0.115,P=14 | knee_sat%=1/0/10/11/
+H=0.095,P=14 | SUMMARY drift=0.010 v=0.080 w=0.72 rms_walk=11.3 rms_turn=3.5 max=18.7
+H=0.095,P=14 | SUMMARY drift=0.024 v=0.105 w=0.73 rms_walk=9.0 rms_turn=3.5 max=15.0
+H=0.095,P=14 | knee_sat%=0/1/11/22/
+P=14,CX=0.015 | SUMMARY drift=0.013 v=0.030 w=-0.03 rms_walk=27.1 rms_turn=31.6 max=52.2
+P=14,CX=0.015 | SUMMARY drift=0.014 v=0.023 w=0.37 rms_walk=27.0 rms_turn=18.4 max=41.6
+P=14,CX=0.015 | knee_sat%=0/1/11/13/
+P=14,CX=-0.015 | SUMMARY drift=0.011 v=0.149 w=0.27 rms_walk=2.6 rms_turn=8.0 max=109.5
+P=14,CX=-0.015 | SUMMARY drift=0.001 v=0.001 w=0.11 rms_walk=111.5 rms_turn=105.5 max=179.9
+P=14,CX=-0.015 | knee_sat%=0/0/0/0/
+P=14,ST=0.25 | SUMMARY drift=0.010 v=0.071 w=0.91 rms_walk=6.7 rms_turn=1.9 max=8.8
+P=14,ST=0.25 | SUMMARY drift=0.010 v=0.067 w=0.91 rms_walk=6.6 rms_turn=2.0 max=8.5
+P=14,ST=0.25 | knee_sat%=0/1/16/5/
+== DONE

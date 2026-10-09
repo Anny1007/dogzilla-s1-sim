@@ -23,11 +23,19 @@ v4: 转向抖动扣分。Gazebo 里 v3 在前进中每 0.2~0.4 s 反转一次转
 v5: 速度模型改用 Gazebo 实测 (rl_policy.speed_model_measured): 低速死区、不能后退、快速转弯明显减速;
   动作上限改为 0.15 m/s (0.2 m/s 加转向会翻倒), 最低 0 (不能后退)。v4 的转向扣分已停用。
   v1~v3 的权重用 NavEnv(v_min, v_max, speed_model='linear') 评估。
+v6: 模型改成实机重量 (本体 875 g + LiDAR 45 g, LiDAR 后移到 x=-0.06, 关节 p=14), 速度模型重新实测
+  (rl_policy.speed_model_875g, 含运动安全滤波的转弯降速、原地转时慢慢后退)。
+  动作上限维持 0.15 m/s: 新重量下稳定走 0.2 m/s 加转向不再翻倒 (最大倾斜 7 度), 但 0.2 m/s 的急起急停会
+  (tools/startstop_test.py, results/startstop_test_875g.txt: 0.20 时倾斜达 57~60 度, 0.15 时最大 10 度)。
+  先试过上限 0.20 的版本, 2D 评估很好, 放进 Gazebo 在障碍物旁「停-冲」几次后翻倒 (results/training/flip_v6_vmax020.txt)。
+  上限 0.15 从零训练 4M 步只到 70~87%, 比 v5 权重差; 改成以 v5 为起点接着训练 2M 步 (train.py --init=...), 采用这一版
+  (models/s1_v6_finetune/, 用不含后退的 measured_875g_nocreep 模型训练)。v5 的权重用 NavEnv(speed_model='measured') 评估。
   手工方块模型 (s1_box) 版本的权重在 models/s1_box/。
   旧 CHAMP 放大模型的版本与权重在 models/champ_old/ (COLLIDE_DIST 0.12, V_MAX 0.3, V_GAIN 0.7, W_GAIN 0.9)
 """
 import heapq
 import math
+import os
 
 import gymnasium as gym
 import numpy as np
@@ -42,8 +50,9 @@ R_MIN, R_MAX = 0.12, 3.5
 COLLIDE_DIST = 0.16    # S1 机身 200 x 78 mm (含相机 216 mm), 原地转时机身前角扫过半径约 0.13 m, 再留余量
 GOAL_RADIUS = 0.25
 V_MAX, W_MAX = 0.20, 1.0      # 观测里速度的归一化常数 (与 rl_policy 相同, 不要改)
-V_MIN, V_CMD_MAX = 0.0, 0.15  # v5 动作范围: S1 实测不能后退, 0.2 m/s 加转向会翻倒
-SPEED_MODEL = 'measured'      # v5 起用实测速度模型 (rl_policy.SPEED_MODELS)
+V_MIN, V_CMD_MAX = 0.0, 0.15  # 动作范围: 不能后退; 0.2 m/s 急起急停会翻倒 (见上面 v6 说明)
+# 训练用的速度模型 (rl_policy.SPEED_MODELS); 环境变量 NAV_SPEED_MODEL 可以换 (例如 measured_875g = 多了原地转时慢慢后退)
+SPEED_MODEL = os.environ.get('NAV_SPEED_MODEL', 'measured_875g_nocreep')
 # 速度反应参数 V_GAIN / V_TAU / TURN_SLOWDOWN / W_GAIN / W_TAU 在 rl_policy.py (部署时也要用)
 ACC_V, ACC_W = 0.5, 2.0       # 与 rl_controller.py 的输出加速度限制相同
 SAFE_DIST = 0.40              # 离障碍物小于此距离开始扣分

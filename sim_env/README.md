@@ -125,7 +125,7 @@ cd sim_env
 
 預設模型 `description/dogzilla_s1_official.urdf.xacro` 來自 **Yahboom 官方的 DOGZILLA S1 URDF**：
 `vendor/Program/yahboomcar_ws_ros2/src/champ/champ_description/urdf/xgo_rviz.xacro`（SolidWorks 1:1 匯出，網格在 `meshes/XGO/`，
-Yahboom 教材 *Rviz simulation in ros2 environment* 用的就是這份）。外觀網格、關節位置、質量、質心與慣量都沿用官方值，
+Yahboom 教材 *Rviz simulation in ros2 environment* 用的就是這份）。外觀網格、關節位置、各連桿質心都沿用官方值（質量改成實機重量，見下方 #8），
 尺寸與官方運動學參數一致（前後髖距 0.093 + 0.057 = 0.150 m、大腿 0.060 m、腳掌間距約 107 mm）。
 （舊的 CHAMP 模型是把同一批網格放大 2 倍，所以比實機大。）
 
@@ -142,7 +142,52 @@ Yahboom 教材 *Rviz simulation in ros2 environment* 用的就是這份）。外
 | 6 | 加 LiDAR、IMU、ros2_control、站姿初始角 | 官方模型只有外型 |
 | 7 | 右側髖部質量改成與左側鏡像相同 | 官方右側是簡化網格，質量只有左側一半（9.8 vs 19.6 g）；不修的話邊走邊左轉時傾斜達 30°，右轉只有 7° |
 
-注意：官方 URDF 的總質量約 0.6 kg，可能沒有算進舵機、樹莓派和電池，實機應該更重。
+| 8 | 質量改為實機重量：本體 875 g + LiDAR 45 g | 官方 URDF 的本體只有 611 g（沒算進電池等），實機秤重約 870–880 g；各連桿質量與慣量等比例放大，LiDAR 連桿由 14 g 改為 45 g |
+| 9 | LiDAR 後移到 `x = −0.06 m`（官方 −0.0167 m） | 對行走平衡影響最小的位置，見下方「實機重量與 LiDAR 安裝位置」 |
+
+### 實機重量與 LiDAR 安裝位置
+
+模型的重量是 **DOGZILLA S1 本體 875 g（實機秤重約 870–880 g）+ 加裝的 DOGZILLA S2 LiDAR 45 g，共 920 g**。
+產生器的 `S1_MASS`、`LIDAR_MASS`、`LIDAR_X` 三個常數可以直接改（也可用環境變數 `S1_MASS` / `S1_LIDAR_MASS` / `S1_LIDAR_X` 暫時覆蓋）。
+
+**LiDAR 放哪裡最不影響行走**：站姿下本體質心在四腳支撐中心**前方約 17 mm**（`python3 tools/com_check.py`），
+小跑步態靠對角兩腳支撐，質心偏前會讓機身往前栽。所以 LiDAR 越往後放，整機質心越接近支撐中心；
+但 45 g 只佔總重 5%，最多只能把質心拉回 4 mm 左右，再往後則後腿負擔變重。左右方向置中，高度維持官方值
+（掃描平面 z = 93 mm，要高於相機外殼的 80 mm，再低前方會被機身擋住）。
+
+在 Gazebo 裡對每個前後位置重產模型、實際走一遍（`tools/tune_sweep.sh`，每個位置前進 / 原地轉 / 邊走邊轉）：
+
+| LiDAR 位置 x（base_link，+ 為前方） | 整機質心在支撐中心前方 | 前進晃動 RMS | 原地轉速率（指令 0.8） | 最大傾斜 | 後腿膝關節扭力飽和 | 結果 |
+|---|---|---|---|---|---|---|
+| +30 mm | 19.2 mm | — | — | 166° | — | 翻倒 |
+| +4 mm | 17.9 mm | 3.1° / 19.7° | 0.77 / 0 rad/s | 67° | 6–7% | 第二次測試翻倒 |
+| −16.7 mm（官方位置，上層平台最後緣） | 16.9 mm | 2.5–3.1°，一次 10.0° | 0.79–0.81 rad/s | 6°，一次 28° | 5–29% | 4 次測試有 1 次大幅前後晃（28°） |
+| −40 mm | 15.8 mm | 1.7–2.5° | 0.54–0.85 rad/s | 5–11° | 6–19% | 穩 |
+| −50 mm | 15.3 mm | 2.1–2.5° | 0.72–0.84 rad/s | 5–9° | 1–14% | 穩 |
+| **−60 mm（採用）** | 14.8 mm | 2.2–2.8° | 0.84–0.89 rad/s | 4.9–5.3° | 0–11% | 穩，6 次測試最大傾斜都在 5.3° 內 |
+| −70 mm | 14.3 mm | 2.3–2.7° | 0.86–0.92 rad/s | 5.1–5.4° | 7–30% | 穩，後腿負擔較重 |
+| −86 mm（貼齊機尾） | 13.5 mm | 2.2–2.7° | 0.88–0.90 rad/s | 5.0° | 12–21% | 穩，後腿負擔較重 |
+| （對照）不裝 LiDAR | 17.5 mm | 1.8–1.9° | 0.80–0.82 rad/s | 5–6° | 0–2% | 穩 |
+
+- 比官方位置更前面會翻倒，官方位置偶爾大幅晃動；**−40 ~ −86 mm 都穩，彼此差異小於量測雜訊**（同一組參數重複量測，晃動差 ±0.5°）。
+  取中間的 **−60 mm**：膝關節扭力飽和最低、6 次測試沒有任何一次異常，安裝時差 1–2 cm 也不影響。
+- 這個位置在機身後段較低的平台上方（平台 z = 36 mm，LiDAR 底面 z = 68 mm），**實機需要一個約 32 mm 高的支架**，
+  LiDAR 中心對準機身中線、距離機尾約 46 mm。
+- 原始資料：`results/sweeps/tune_875g_round2_lidar_x.txt`、`tune_875g_round3_lidar_x_repeat.txt`
+  （`lidar_sweep_before_retune.txt` 是還沒重調增益時的結果：875 g 直接套用舊增益，各位置都走不穩）。
+
+**加重後重調的參數**：關節 PID 的 p 由 8 改為 **14**（`config/ros_control_s1.yaml`）。p=8 是質量 625 g 時選的，
+加到 920 g 後 p=8–12 撐不住會翻倒，p=17 以上又開始顫振（`results/sweeps/tune_875g_round1.txt`、`round2`）。
+站高 0.105 m、抬腳 0.018 m、支撐相 0.35 s 維持不變（改高、改低、抬高腳都變差）。調整後：
+
+| 指令 | 實際（`results/speed_response_s1_875g_run*.txt`） | 最大傾斜 |
+|---|---|---|
+| 前進 0.10 / 0.15 / 0.20 m/s | 0.039 / 0.084 / 0.10–0.13 m/s（0.05 m/s 以下不會前進） | 3–6° |
+| 原地轉 0.3 / 0.6 / 1.0 rad/s | 0.32 / 0.61 / 1.06 rad/s（同時以約 0.05 m/s 慢慢後退） | 4–6° |
+| 前進 0.15 m/s + 轉 0.5 rad/s | 0.08 m/s、0.6 rad/s（625 g 時只剩 0.034 m/s） | 4–5° |
+| 前進 0.20 m/s + 轉 0.2 rad/s | 0.10–0.13 m/s（625 g 時在這裡翻倒） | 5–7° |
+
+下面「減少晃動」一節是 625 g 時期的紀錄（當時 p=8），方法相同、數字是舊的。
 
 ### 減少晃動
 
@@ -177,8 +222,8 @@ Yahboom 教材 *Rviz simulation in ros2 environment* 用的就是這份）。外
   經濾波後才送到 `/cmd_vel`。實機也適用。
 - **Nav2**：`robot_radius` 0.13 m、膨脹半徑 0.40 m、到達容許誤差 0.15 m、加速度限制 0.5 m/s²。
 - **LiDAR 地面點過濾**：掃描平面離地約 0.19 m，`margin` 0.5、IMU 歷史 0.3 s。
-- **RL 策略**依官方模型的實測速度反應（含邊轉邊走會變慢）重新訓練 4M 步（`rl/nav_env.py`；舊場地離線評估 92% 到達）。
-  舊權重在 `rl/models/s1_official_2M/`、`rl/models/s1_box/`（手工方塊模型）與 `rl/models/champ_old/`（放大模型）。
+- **RL 策略**依 920 g 模型的實測速度反應重新訓練（v6，見「RL 避障控制器」）。
+  舊權重（625 g 時期）在 `rl/models/s1_v5_measured/`、`s1_v3_shield/`、`s1_official_2M/` 等，`rl/models/s1_box/` 是手工方塊模型、`rl/models/champ_old/` 是放大模型。
 
 其他模型（對照用）：`model:=s1_box` 是之前依官方尺寸手工做的方塊模型（`description/dogzilla_s1.urdf.xacro`），
 `model:=champ` 是舊的放大模型。
@@ -232,7 +277,22 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 同一場地 7 個目標點依序走完。「控制器回報完成」代表 Nav2 或 RL 認為已到達（導航避障能力）；
 「真值到達」用 Gazebo 真實位置判定（離目標 < 0.35 m），也包含 SLAM 定位誤差。各為單次執行結果。
 
-**官方 S1 URDF（預設），`project3` 場地**
+**目前的模型（官方 S1 URDF，本體 875 g + LiDAR 45 g），`project3` 場地**（2026-10-10）
+
+| 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 最小離障距離 | 成功段平均用時 | 翻倒 | CSV |
+|---|---|---|---|---|---|---|---|
+| **RL（PPO v6，預設權重）** | **7/7** | **7/7** | 0 | 0.13 m | 80.2 s | 否 | `results/benchmarks/bench_s1_875g_rl_v6.csv` |
+| RL（PPO v5，625 g 時訓練的舊權重） | 7/7 | 7/7 | 0 | 0.13 m | 85.1 s | 否 | `results/benchmarks/bench_s1_875g_rl_v5.csv` |
+| Nav2 RPP | 3/7 | 1/7 | 3 | 0.09 m | 98.4 s | 否 | `results/benchmarks/bench_s1_875g_rpp.csv` |
+| Nav2 DWB | 1/7 | 0/7 | 6 | 0.11 m | — | 否 | `results/benchmarks/bench_s1_875g_dwb.csv` |
+
+- RL 7 段全部到達、沒有擦碰也沒有翻倒；第 1 段就是投影片上的任務（從起點繞過障礙物走到右上角目標），用時 117 s。
+  SLAM 誤差全程在 0.06–0.13 m（RL 走得平順，沒有原地打轉）。
+- 同一份 v5 權重在 625 g 的舊模型上是 3/7 且翻倒（下表）：改善主要來自模型本身變穩（重量、LiDAR 位置與關節增益調整後，邊走邊轉不再翻倒），不是策略變了。
+- Nav2 的 RPP / DWB 沒有為新重量重調，表現與之前差不多（走得慢、SLAM 誤差累積到 1 m 以上）。
+- 各為**單次執行**結果。RL 節點與評分用的位姿是 Gazebo 真值，實機要換成 SLAM 定位（見「已知限制」）。
+
+**625 g 時期（官方 URDF 原始質量），`project3` 場地**（2026-10-02）
 
 | 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 最小離障距離 | 翻倒 | CSV |
 |---|---|---|---|---|---|---|
@@ -267,10 +327,41 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 ## RL 避障控制器
 
 - 觀測：LiDAR 360 線每 10° 取最小值（36 維）+ 與路徑前方瞄準點的距離/方位 + 上一步動作 + 目前速度
-- 動作：前進速度 `v ∈ [0, 0.2] m/s`、轉向 `ω ∈ [-1, 1] rad/s`，輸出端限制加速度 0.5 m/s²、2 rad/s²
+- 動作：前進速度 `v ∈ [0, 0.15] m/s`、轉向 `ω ∈ [-1, 1] rad/s`，輸出端限制加速度 0.5 m/s²、2 rad/s²
+- 安全保護（`rl/safety_shield.py`）：RL 想要的速度先經過碰撞檢查，會撞的動作換成最接近的安全動作；訓練與部署都開
 - 架構：Nav2 `planner_server` 給全域路徑，RL 瞄準路徑前方 0.8 m 的點做局部避障
   （RL 模式下不開 Nav2 的 controller_server，避免兩邊搶 `/cmd_vel`）
 - 部署推理只用 numpy（`rl_policy.py`），Raspberry Pi 上不需要裝 PyTorch
+
+**目前的預設權重（v6，`rl/models/policy.npz` = `rl/models/s1_v6_finetune/best/`）** 是針對 920 g 模型訓練的：
+
+- 訓練環境 `rl/nav_env.py` 是純 Python 的 2D 光達環境（隨機場地：零散障礙物、長牆、U 形陷阱、走廊），用 PPO 訓練（只用 CPU）。
+- 機器狗在 2D 環境裡怎麼動，用的是 Gazebo 實測的速度反應（`rl_policy.speed_model_875g`，資料在 `results/speed_response_s1_875g_run*.txt`）：
+  指令低於約 0.06 m/s 不會前進、0.15 m/s 實際約 0.084 m/s、運動安全濾波的轉彎降速。
+- **訓練經過**（三次嘗試都留有紀錄，接手的人可以少走冤枉路）：
+  1. 速度上限 0.20 m/s、從零訓練 4M 步：2D 評估很好（投影片場地 100%），但放進 Gazebo 走完前 2 段後，在障礙物旁反覆「停—衝」時翻倒
+     （`results/training/flip_v6_vmax020.txt`）。起停壓力測試確認 0.20 m/s 急起急停時傾斜達 57–60°，0.15 m/s 最大只有 10°
+     （`tools/startstop_test.py`，`results/startstop_test_875g.txt`），所以上限維持 0.15 m/s。
+  2. 上限 0.15 m/s、從零訓練 4M 步：只到 70–87%，比舊的 v5 權重（625 g 時訓練）差（`rl/models/s1_v6_scratch/`，`results/training/eval_compare_v6_scratch.txt`）。
+  3. **以 v5 權重為起點、在 920 g 的速度模型上接續訓練 2M 步**（`train.py --init=...`，約 26 分鐘）：採用這一版。
+- 速度模型另有一個含「原地轉時以 0.05 m/s 後退」的版本（`s1_v6_finetune_creep/`），2D 評估略高但沒有在 Gazebo 實測。
+
+| 2D 環境評估（`results/training/eval_compare_v6.txt`，都用 920 g 的速度模型） | v6（採用） | v6 含後退版 | v6 從零訓練 | v5（625 g 時訓練） | 追路徑點（傳統基準） |
+|---|---|---|---|---|---|
+| 舊測試場地 210 段 | 90% 到達、0 碰撞、平均 52.2 s | 94%、1、51.6 s | 70%、0、58.4 s | 90%、0、53.3 s | 63%、77 次碰撞 |
+| 投影片場地 project3 210 段（訓練沒看過） | 99%、0 碰撞、69.9 s | 100%、0、68.7 s | 87%、0、70.6 s | 100%、0、70.1 s | 52%、100 次碰撞 |
+| 隨機新場景 200 個 | 88%、3 碰撞、43.7 s | 90%、3、43.4 s | 78%、3、44.6 s | 89%、3、44.0 s | 64%、73 次碰撞 |
+
+在 2D 環境裡 v6 與 v5 差不多（差異在雜訊範圍內）；放進 Gazebo 兩者都是 7/7，v6 平均每段快約 5 秒（見上方「Benchmark 結果」）。
+訓練曲線：`results/training/ppo_metrics_v6.png`。
+
+**接手的人可以從這裡繼續改善**：
+- 獎勵與場景生成在 `rl/nav_env.py`（檔頭有 v1–v6 每一版改了什麼、為什麼），訓練參數在 `rl/train.py`，
+  重新訓練、評估、放進 Gazebo 測試的步驟在 `SETUP.md` 第 6 節。
+- 走得慢的主因是運動安全濾波（`launch/cmd_vel_safety.py`）的轉彎降速：它是 625 g 時「邊走邊轉會翻倒」而加的，
+  920 g 下步態本身邊走邊轉已不會減速也沒翻倒（直接送 0.15 m/s + 0.5 rad/s 仍有 0.08 m/s、傾斜 5°）。
+  放寬 `min_scale` / `w_full_stop`、重新量測速度反應後再訓練，有機會明顯變快（需要先用 `tools/startstop_test.py` 之類的測試確認不會翻倒）；這次沒有動它。
+- Gazebo 的結果是單次執行，而且場地只有 project3 一個；要確認穩定性需要多跑幾次、換場地。
 
 模擬只需要 `models/policy.npz`（已附上），**不用另外裝任何東西**。要重新訓練時，在主機上建 Python 環境（Python 3.10 以上）：
 
@@ -278,8 +369,8 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 cd sim_env/rl
 python3 -m venv .venv
 env -u PYTHONPATH .venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
-env -u PYTHONPATH .venv/bin/python train.py 4e6     # 產生 models/ppo_nav.zip 與 models/policy.npz (約 20 分鐘)
-env -u PYTHONPATH .venv/bin/python eval_offline.py  # 在固定測試場地評估
+env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓練 4M 步 (約 45 分鐘), 存到 models/my_run/
+env -u PYTHONPATH .venv/bin/python eval_compare.py "目前=models/policy.npz" "新=models/my_run/best/policy.npz"   # 與目前的權重比較
 ```
 
 > `env -u PYTHONPATH`：避免主機的 PYTHONPATH（例如指向 ROS 或其他 Python 版本的 dist-packages）讓 venv 載入到錯誤版本的套件。
@@ -302,12 +393,21 @@ env -u PYTHONPATH .venv/bin/python eval_offline.py  # 在固定測試場地評�
 | `flip_monitor.py` | 監測翻倒，印出翻倒前 6 秒的位置、傾斜與速度指令 |
 | `startup_trace.py` | 記錄開始模擬後幾秒內的機身高度與關節角 |
 | `gait_eval.py` | 步態綜合評估：速度、晃動 RMS/最大值、高度起伏、靜止漂移 |
+| `speed_response.py` | 各種速度指令下的實際前進 / 轉向速度與傾斜（RL 訓練環境的速度模型就是照這份結果擬合的） |
+| `stand_drift.py` | 靜止站立時的漂移 |
+| `tune_sweep.sh` | 在主機執行：質量 / LiDAR 位置 / 關節增益 / 站姿掃描（`P=14,LX=-0.06` 這種寫法，每組重產模型並重啟模擬） |
+| `com_check.py` | 在主機執行：站姿下的整機質心與四腳支撐中心（靜態計算，不需要 Gazebo） |
 | `gain_sweep.sh` / `gait_sweep.sh` / `bench_all.sh` | 在主機執行：關節增益與步態掃描（官方模型）/ 步態掃描（方塊模型）/ 三種控制器依序 benchmark |
 
 ## 已知限制
 
 - 模擬中 RL 節點與 benchmark 的位姿取自 Gazebo 真值 (`/demo/odom/ground_truth`)；實機要換成 SLAM 的 `map→base_link`。
-- S1 模型的機身高度、總重與 LiDAR 位置是推估值；步態是 CHAMP 的，不是 Yahboom 韌體的步態，實機的速度與晃動需要重新量測。
+- S1 模型的總重已改成實機秤重（本體 875 g + LiDAR 45 g），但**重量在各連桿間的分布是把官方 URDF 等比例放大**，
+  電池、樹莓派的實際位置沒有量；LiDAR 位置是模擬選出的建議值。步態是 CHAMP 的，不是 Yahboom 韌體的步態，實機的速度與晃動需要重新量測。
+- **靜止站立時機身會以約 1 cm/s 慢慢往後滑**（`tools/stand_drift.py`；625 g 時期就有，`results/sweeps/gain_sweep_pid.txt` 的 drift 欄）。
+  與關節 PID 的微幅顫振有關（d 增益 0.03 時不會滑，但走路會晃）。導航中有閉迴路修正所以不明顯，但到達目標後停著不動會慢慢離開目標點，
+  啟動後不下目標放著也會退到後方的牆邊。原地轉向時以約 5 cm/s 後退也是同一類現象，RL 的速度模型有把它算進去。
+- RL 訓練環境假設 LiDAR 在機身中心；實際在中心後方 6 cm，所以機身前方的障礙物實際上比 RL 以為的近 6 cm（碰撞判定距離 0.16 m 有留餘量）。
 - 啟動時 `gazebo_ros2_control: Parameter 'hold_joints' has already been declared` 的 ERROR 是 12 個獨立
   ros2_control 區塊造成的無害訊息，不影響控制。
 - `champ_gazebo/contact_sensor` 會佔滿一顆 CPU（Gazebo 每個物理步都送出接觸資料），但模擬即時率仍約 0.9。

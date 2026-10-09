@@ -169,7 +169,7 @@ env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓�
 | 第 2 個 | 輸出資料夾，預設 `models`。**不指定會覆蓋部署用的 `models/policy.npz`** |
 | `--shield` | 訓練時加上安全保護（`rl/safety_shield.py`）。權重檔會記錄，部署時自動開啟 |
 
-訓練環境目前（v5）使用 Gazebo 實測的速度模型（`rl/rl_policy.py` 的 `speed_model_measured`），動作範圍 0～0.15 m/s。
+訓練環境目前（v6）使用 920 g 模型（本體 875 g + LiDAR 45 g）在 Gazebo 實測的速度模型（`rl/rl_policy.py` 的 `speed_model_875g`），動作範圍 0～0.15 m/s（0.20 m/s 急起急停會翻倒，見 `results/startstop_test_875g.txt`）。
 速度模型與動作範圍都會寫進權重檔，部署節點會照著用，所以舊權重（v1～v3）仍照原本的設定執行。
 
 輸出資料夾裡會有：
@@ -187,7 +187,8 @@ env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓�
 ```bash
 # 在 2D 環境比較多個模型 (舊測試場地、投影片場地、隨機場景各一組)
 env -u PYTHONPATH .venv/bin/python eval_compare.py "v1=models/policy.npz" "新=models/my_run/best/policy.npz"
-# 路徑後面可加 +shield (強制開安全保護)、+measured (改用實測速度模型), 例如 "v3=models/s1_v3_shield/best/policy.npz+measured"
+# 路徑後面可加 +shield (強制開安全保護)、+measured (改用 625 g 時期的實測速度模型)、+875g (改用目前 920 g 的實測速度模型)
+# 例如 "v5=models/s1_v5_measured/best/policy.npz+875g"
 
 # 畫訓練曲線 (用模擬映像裡的 matplotlib, 主機不用另外安裝)
 cd ..

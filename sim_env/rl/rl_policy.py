@@ -35,7 +35,26 @@ def speed_model_measured(v, w, v_cmd, w_cmd, dt):
     return v, w
 
 
-SPEED_MODELS = {'linear': speed_model, 'measured': speed_model_measured}
+def speed_model_875g(v, w, v_cmd, w_cmd, dt, creep=True):
+    """v6 起用的模型: 实机重量 (本体 875 g + LiDAR 45 g, LiDAR 在 x=-0.06) 的 Gazebo 实测
+    (tools/speed_response.py, results/speed_response_s1_875g_run*.txt)。与 v5 模型不同的地方:
+    * 包含运动安全滤波 (launch/cmd_vel_safety.py): RL 的输出先乘 max(0.15, 1 - |转向指令|) 才到步态控制器。
+      新重量下步态本身边走边转已经不会减速 (直接送 /cmd_vel 0.15 + 0.5 rad/s 仍有 0.08 m/s), 减速全部来自滤波
+    * 前进: 稳定速度 = 0.9 * (滤波后指令) - 0.051, 上限 0.11 (实测 0.10 -> 0.039, 0.15 -> 0.084, 0.20 -> 0.10~0.13;
+      经滤波 0.10 + 0.2 -> 0.017, 0.10 + 0.4 -> 0.00, 0.15 + 0.5 -> 0.016)
+    * 只要步态在踏步 (有前进或转向指令), 指令太小时机身会慢慢后退: 原地转实测 -0.05 m/s (creep=False 时当作 0)
+    * 时间常数 0.35 s (实测), 转向增益 1.0 (实测经滤波 0.90~1.06)"""
+    stepping = abs(v_cmd) > 1e-3 or abs(w_cmd) > 0.02
+    target = min(0.11, 0.9 * v_cmd * max(0.15, 1 - abs(w_cmd)) - 0.051) if stepping else 0.0
+    if not creep:
+        target = max(0.0, target)
+    v += (target - v) * dt / 0.35
+    w += (w_cmd - w) * dt / W_TAU
+    return v, w
+
+
+SPEED_MODELS = {'linear': speed_model, 'measured': speed_model_measured, 'measured_875g': speed_model_875g,
+                'measured_875g_nocreep': lambda *a: speed_model_875g(*a, creep=False)}
 LOOKAHEAD = 0.8            # 沿全局路径向前瞄准的距离 (m)
 WAYPOINT_ADVANCE = 0.4     # 离当前路径点小于此距离就换下一个
 

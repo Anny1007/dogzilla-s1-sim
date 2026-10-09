@@ -22,6 +22,10 @@
   7. 右側髖部 (rf/rh_hip_link) 的質量與慣量改成與左側鏡像相同。官方右側髖部是簡化過的網格 (三角形數只有左側一半),
      質量 9.8 g 只有左側 19.6 g 的一半; 實機左右對稱。不修的話 0.2 m/s 前進加左轉時機身傾斜達 30°, 右轉只有 7°
      (tools/combo_test.py), 修正後左右都在 8.4° 內。
+  8. 質量改為實機重量: S1 本體 (含相機, 不含 LiDAR) 共 875 g (實機秤重約 870~880 g), 加裝的 DOGZILLA S2 LiDAR 45 g。
+     官方 URDF 的本體只有 611 g (沒算進電池等), 各連桿的質量與慣量等比例放大到 875 g (質心位置不變);
+     LiDAR 連桿 (官方 14 g) 的質量與慣量放大到 45 g。
+  9. LiDAR 安裝位置 (LIDAR_X): 見下方常數的說明。
 
 用法 (在 sim_env/description/ 下): python3 make_s1_official.py
 """
@@ -38,7 +42,18 @@ OUT = os.path.join(HERE, 'dogzilla_s1_official.urdf.xacro')
 
 SERVO_EFFORT, SERVO_VEL = 0.44, 10.5
 JOINT_DAMPING = float(os.environ.get('S1_JOINT_DAMPING', 0.01))   # N·m·s/rad, ODE 隱式求解 (implicitSpringDamper)
-STAND_H = 0.105            # 生成時的站高 (髖關節到腳底), 須與 config/gait_s1.yaml 的 nominal_height 一致
+S1_MASS = float(os.environ.get('S1_MASS', 0.875))        # kg, S1 本體 (不含 LiDAR), 實機秤重約 870~880 g
+LIDAR_MASS = float(os.environ.get('S1_LIDAR_MASS', 0.045))   # kg, DOGZILLA S2 的 LiDAR
+# LiDAR 前後位置 (laser_link 原點在 base_link 的 x, m; 官方 URDF 是 -0.016732, 即上層平台的最後緣)。
+# 站姿下本體質心在四腳支撐中心前方約 17 mm (tools/com_check.py), 所以 LiDAR 越往後放, 整機質心越接近支撐中心。
+# Gazebo 掃描 (tools/tune_sweep.sh, results/sweeps/tune_875g_round2_lidar_x.txt 與 round3):
+#   比官方位置更前面走路會翻倒, 官方位置 4 次測試有 1 次大幅晃動 (28 度); -0.04 ~ -0.07 都穩 (前進晃動 RMS 約 2.2~2.6 度, 與沒裝 LiDAR 時的 1.9 度接近),
+#   差異小於量測雜訊; -0.086 (貼齊機尾) 後腿膝關節扭力飽和升到 21%。
+# 取平台區中間的 -0.06: 膝關節飽和最低 (0~11%), 安裝誤差 1~2 cm 也不影響。左右置中 (y 沿用官方 0), 高度沿用官方
+# (LiDAR 底面 z = 68 mm = 上層平台高度, 掃描平面 z = 93 mm 高於相機外殼 80 mm, 再低前方會被機身擋住)。
+# 這個位置在機身後段較低的平台 (z = 36 mm) 上方, 實機需要約 32 mm 高的支架。
+LIDAR_X = float(os.environ.get('S1_LIDAR_X', -0.06))
+STAND_H = float(os.environ.get('S1_STAND_H', 0.105))            # 生成時的站高 (髖關節到腳底), 須與 config/gait_s1.yaml 的 nominal_height 一致
 LEGS = ['lf', 'rf', 'lh', 'rh']
 
 # 網格範圍 (m, 各連桿座標系), 由 meshes/XGO/*.STL 量得
@@ -113,6 +128,19 @@ def main():
                 inert.find('inertia').set(k, v if k not in ('ixy', 'iyz') else str(-float(v)))
             o = lf.find('origin').get('xyz').split()
             inert.find('origin').set('xyz', f"{o[0]} {-float(o[1])} {o[2]}")
+
+    # --- 8. 質量 / 9. LiDAR 位置 ---
+    inertials = {l.get('name'): l.find('inertial') for l in root.findall('link') if l.find('inertial') is not None}
+    def scale(inert, k):
+        inert.find('mass').set('value', f"{float(inert.find('mass').get('value')) * k:.6g}")
+        for a, v in inert.find('inertia').attrib.items():
+            inert.find('inertia').set(a, f'{float(v) * k:.6g}')
+    body_mass = sum(float(i.find('mass').get('value')) for n, i in inertials.items() if n != 'laser_link')
+    for n, i in inertials.items():
+        scale(i, LIDAR_MASS / float(i.find('mass').get('value')) if n == 'laser_link' else S1_MASS / body_mass)
+    o = joints['laser_Joint'].find('origin')
+    xyz = o.get('xyz').split()
+    o.set('xyz', f'{LIDAR_X} {xyz[1]} {xyz[2]}')
 
     # --- 4. 碰撞 ---
     links = {l.get('name'): l for l in root.findall('link')}

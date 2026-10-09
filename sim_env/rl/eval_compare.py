@@ -1,7 +1,8 @@
 """在 2D 环境比较多个策略 (部署方式: 沿全局路径的瞄准点):
     python eval_compare.py [名称=权重.npz[+shield] ...]      默认比较 models/policy.npz 与 models/s1_v2/policy.npz
 权重档训练时有安全保护会自动开启; 在路径后面加 +shield 可以强制开启 (例如测试旧模型 + 安全保护),
-加 +measured 改用 Gazebo 实测速度模型 (例如 models/s1_v3_shield/best/policy.npz+measured)。
+加 +measured 改用 625 g 时期的 Gazebo 实测速度模型 (例如 models/s1_v3_shield/best/policy.npz+measured),
+加 +875g 改用目前 920 g 模型的实测速度模型 (看旧权重在新重量下的表现)。
 
 三组场景:
   旧测试场地   worlds/obstacle_test.world, 7 段 x 30 轮
@@ -14,7 +15,7 @@ import sys
 
 import numpy as np
 
-from nav_env import DT, NavEnv, PROJECT3, PROJECT3_WALLS, TEST_WORLD, WALLS
+from nav_env import DT, NavEnv, PROJECT3, PROJECT3_WALLS, SPEED_MODEL, TEST_WORLD, V_CMD_MAX, WALLS
 from rl_policy import Policy
 
 OLD_GOALS = [(2.2, 0.0), (-2.0, 0.3), (2.2, -1.8), (-2.0, -2.0), (2.2, 1.8), (-1.8, 1.8), (0.0, 0.0)]
@@ -22,7 +23,7 @@ P3_GOALS = [(5.9, 1.1), (0.0, 0.0), (5.6, -1.5), (0.3, 1.5), (3.1, 0.6), (1.5, -
 
 
 class PurePursuit:
-    v_min, v_max, shield, speed_model = 0.0, 0.15, False, 'measured'
+    v_min, v_max, shield, speed_model = 0.0, V_CMD_MAX, False, SPEED_MODEL
 
     def act(self, o):
         ang = math.atan2(o[37], o[38])
@@ -73,6 +74,8 @@ if __name__ == '__main__':
         p.shield = p.shield or 'shield' in flags
         if 'measured' in flags:          # 改用 Gazebo 实测速度模型评估 (旧权重原本是 linear)
             p.speed_model = 'measured'
+        if '875g' in flags:
+            p.speed_model = 'measured_875g'
         pols.append((name, p))
     pols.append(('追路径点', PurePursuit()))
     for title, fn in [('旧测试场地 (7 段 x 30 轮)', lambda p: fixed_world(p, TEST_WORLD, WALLS, OLD_GOALS, (0.0, 0.0))),

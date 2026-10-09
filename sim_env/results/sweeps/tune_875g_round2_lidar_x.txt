@@ -1,0 +1,40 @@
+P=14,LX=-0.086 | SUMMARY drift=0.010 v=0.088 w=0.90 rms_walk=2.7 rms_turn=3.2 max=4.9
+P=14,LX=-0.086 | SUMMARY drift=0.010 v=0.106 w=0.88 rms_walk=2.2 rms_turn=3.1 max=5.0
+P=14,LX=-0.086 | knee_sat%=0/0/12/21/
+P=14,LX=-0.06 | SUMMARY drift=0.010 v=0.109 w=0.89 rms_walk=2.2 rms_turn=3.0 max=4.9
+P=14,LX=-0.06 | SUMMARY drift=0.010 v=0.120 w=0.86 rms_walk=2.5 rms_turn=3.4 max=5.2
+P=14,LX=-0.06 | knee_sat%=0/1/11/10/
+P=14,LX=-0.04 | SUMMARY drift=0.010 v=0.109 w=0.84 rms_walk=2.5 rms_turn=3.5 max=5.5
+P=14,LX=-0.04 | SUMMARY drift=0.010 v=0.133 w=0.85 rms_walk=1.7 rms_turn=3.4 max=5.7
+P=14,LX=-0.04 | knee_sat%=0/0/8/9/
+P=14,LX=-0.016732 | SUMMARY drift=0.010 v=0.084 w=0.79 rms_walk=2.9 rms_turn=3.9 max=5.6
+P=14,LX=-0.016732 | SUMMARY drift=0.010 v=0.068 w=0.81 rms_walk=10.0 rms_turn=3.6 max=27.6
+P=14,LX=-0.016732 | knee_sat%=0/0/16/5/
+P=14,LX=0.004 | SUMMARY drift=0.010 v=0.081 w=0.77 rms_walk=3.1 rms_turn=3.8 max=5.6
+P=14,LX=0.004 | SUMMARY drift=0.010 v=0.032 w=-0.03 rms_walk=19.7 rms_turn=52.2 max=66.6
+P=14,LX=0.004 | knee_sat%=0/0/7/6/
+P=14,LX=0.03 | SUMMARY drift=0.010 v=0.053 w=0.02 rms_walk=93.3 rms_turn=133.8 max=166.4
+P=14,LX=0.03 | SUMMARY drift=0.000 v=0.000 w=0.01 rms_walk=134.0 rms_turn=133.8 max=135.2
+P=14,LX=0.03 | knee_sat%=0/0/0/0/
+P=14,LM=0.001 | SUMMARY drift=0.009 v=0.142 w=0.82 rms_walk=1.8 rms_turn=3.6 max=5.0
+P=14,LM=0.001 | SUMMARY drift=0.009 v=0.131 w=0.80 rms_walk=1.9 rms_turn=4.3 max=5.9
+P=14,LM=0.001 | knee_sat%=0/0/0/2/
+P=11 | SUMMARY drift=0.010 v=0.054 w=-0.00 rms_walk=145.3 rms_turn=180.0 max=180.0
+P=11 | SUMMARY drift=0.000 v=0.000 w=-0.00 rms_walk=180.0 rms_turn=180.0 max=180.0
+P=11 | knee_sat%=0/0/0/0/
+P=12 | SUMMARY drift=0.010 v=0.055 w=0.01 rms_walk=9.6 rms_turn=133.9 max=136.8
+P=12 | SUMMARY drift=0.000 v=0.000 w=0.00 rms_walk=134.0 rms_turn=133.9 max=135.2
+P=12 | knee_sat%=0/0/0/0/
+P=17 | SUMMARY drift=0.010 v=0.046 w=0.63 rms_walk=3.4 rms_turn=4.9 max=6.3
+P=17 | SUMMARY drift=0.010 v=0.076 w=0.79 rms_walk=3.2 rms_turn=4.0 max=6.4
+P=17 | knee_sat%=2/1/2/6/
+P=14,D=0.01 | SUMMARY drift=0.011 v=0.096 w=0.74 rms_walk=2.8 rms_turn=3.9 max=5.8
+P=14,D=0.01 | SUMMARY drift=0.011 v=0.087 w=0.69 rms_walk=2.9 rms_turn=4.4 max=5.9
+P=14,D=0.01 | knee_sat%=5/3/9/12/
+P=14,SW=0.024 | SUMMARY drift=0.010 v=0.132 w=0.17 rms_walk=2.9 rms_turn=151.3 max=180.0
+P=14,SW=0.024 | SUMMARY drift=0.000 v=0.000 w=0.00 rms_walk=180.0 rms_turn=180.0 max=180.0
+P=14,SW=0.024 | knee_sat%=0/0/0/0/
+P=14,ST=0.30 | SUMMARY drift=0.010 v=0.018 w=0.53 rms_walk=3.9 rms_turn=5.9 max=9.1
+P=14,ST=0.30 | SUMMARY drift=0.010 v=0.015 w=0.59 rms_walk=3.9 rms_turn=5.2 max=8.4
+P=14,ST=0.30 | knee_sat%=0/0/20/19/
+== DONE
