@@ -1,7 +1,8 @@
 # DOGZILLA S1 自主避障專案（Project 3）
 
 讓 Yahboom DOGZILLA S1 四足機器狗加裝 LiDAR 後，**自己建地圖、規劃路線、繞過障礙物走到目標點**。
-目前以 Gazebo 模擬完成整條系統：LiDAR → SLAM → Nav2 路徑規劃 → 避障（傳統演算法 / 強化學習）→ 步態控制。
+目前以 Gazebo 模擬把整條系統與測試環境建好：LiDAR → SLAM → Nav2 路徑規劃 → 避障（傳統演算法 / 強化學習）→ 步態控制。
+**強化學習的避障策略還沒有訓練**（只附未訓練的空白權重），這是接下來的工作，只需要模擬。
 
 - 第一次接觸：先看 [`docs/專案說明.md`](docs/專案說明.md)（給接手的組員：專案在做什麼、做到哪裡、接下來要做什麼）或簡報 `docs/DOGZILLA_專案簡報.pptx`
 - 在新電腦上建置環境：看 [`sim_env/SETUP.md`](sim_env/SETUP.md)（從安裝 Docker 到確認模擬正常的逐步指南）
@@ -26,8 +27,8 @@ DOGZILLA/
 │   ├── launch/               一鍵啟動檔、LiDAR 地面點過濾、運動安全濾波、RViz 設定
 │   ├── description/          機器狗模型（由官方 URDF 自動產生）
 │   ├── config/               步態、關節控制器、SLAM 設定
-│   ├── worlds/               模擬場地（預設 corridor = 窄通道 + 死巷；另有 clutter、project3 = 投影片第 1 頁場景）
-│   ├── rl/                   強化學習避障（訓練程式與已訓練好的權重）
+│   ├── worlds/               模擬場地（預設 corridor = 窄通道 + 死巷；另有 clutter、paper_fig4 = 論文地圖、project3 = 投影片第 1 頁場景）
+│   ├── rl/                   強化學習避障（訓練環境、訓練與部署程式、測試場地定義；權重是未訓練的空白權重）
 │   ├── tools/                診斷與測試工具
 │   ├── results/              已記錄的測試結果（有索引說明）
 │   ├── logs/, maps/          執行時輸出（一開始是空的）
@@ -48,7 +49,7 @@ DOGZILLA/
 cd sim_env
 ./run.sh build      # 第一次：建 Docker 映像（約 10~20 分鐘，需要網路）
 ./run.sh colcon     # 第一次：編譯 CHAMP 步態套件（約 3 分鐘）
-./run.sh sim        # 啟動模擬；約 30 秒後在 RViz 用「2D Goal Pose」點目標，機器狗就會自己走過去
+./run.sh sim        # 啟動模擬（Nav2 DWB）；約 30 秒後在 RViz 用「2D Goal Pose」點目標，機器狗就會開始往目標走
 ./run.sh stop       # 停止
 ```
 
@@ -77,7 +78,8 @@ cd sim_env
 |---|---|
 | Docker 映像 `dogzilla-sim:humble` | `cd sim_env && ./run.sh build` |
 | CHAMP 編譯產物（`vendor/Program/yahboomcar_ws_ros2/build`、`install`、`log`） | `cd sim_env && ./run.sh colcon` |
-| RL 訓練用的 Python 環境（`sim_env/rl/.venv`，約 1.1 GB） | 只有重新訓練時才需要，見 `sim_env/README.md` 的「RL 避障控制器」；套件清單在 `sim_env/rl/requirements.txt` |
+| 訓練過的強化學習權重 | 沒有附；`sim_env/rl/models/` 裡是未訓練的空白權重。訓練步驟見 `sim_env/SETUP.md` 第 6 節 |
+| RL 訓練用的 Python 環境（`sim_env/rl/.venv`，約 1.1 GB） | 訓練時才需要，見 `sim_env/README.md` 的「RL 避障控制器」；套件清單在 `sim_env/rl/requirements.txt` |
 
 `vendor/` 裡的原廠資料都保留原樣（只刪除了 macOS 的 `._*`、`.DS_Store` 與 Jupyter 的自動存檔），
 本專案的修改全部在 `sim_env/`。

@@ -92,7 +92,7 @@ ls ../vendor/Program/yahboomcar_ws_ros2/install    # 應該有 champ、champ_gaz
 ```
 
 指令會立刻回到命令列，模擬在背景容器 `dogzilla-sim` 裡執行。約 30 秒後會出現 **Gazebo**（3D 場景）與 **RViz**（地圖、光達、路徑）兩個視窗。
-預設場地是 `project.pptx` 第 1 頁的障礙物場景。
+預設場地是 `corridor`（兩道交錯的長牆、0.6 m 的門口、死巷）；其他場地見 5.4。
 
 ### 5.2 確認啟動成功
 
@@ -142,7 +142,7 @@ docker exec dogzilla-sim bash -lc 'source /opt/ros/humble/setup.bash;
 
 ## 6. 強化學習訓練環境 (選用)
 
-只有要**重新訓練**或**評估**強化學習模型時才需要。訓練用的是純 Python 的 2D 光達環境（`rl/nav_env.py`），
+要**訓練**或**評估**強化學習模型時才需要（專案沒有附訓練過的權重，要讓強化學習模式真的會避障就得做這一節）。訓練用的是純 Python 的 2D 光達環境（`rl/nav_env.py`），
 只用 CPU，不需要 ROS 或 Gazebo，直接在主機上執行。
 
 ### 6.1 建立 Python 環境
