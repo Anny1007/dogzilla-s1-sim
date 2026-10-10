@@ -28,6 +28,16 @@ cd dogzilla-s1-sim/sim_env
 ./run.sh sim rl                        # 啟動模擬，看目前的強化學習怎麼走、卡在哪裡
 ```
 
+四個場景的俯視圖（障礙物與目標點的順序）：
+
+| 場景 1：PPT 第一頁 | 場景 2：長牆（預設） |
+|---|---|
+| ![場景 1](docs/scene_project3.png) | ![場景 2](docs/scene_corridor.png) |
+| **場景 3：論文** | **場景 4：柱子** |
+| ![場景 3](docs/scene_paper_fig4.png) | ![場景 4](docs/scene_clutter.png) |
+
+場景 2、4 圖上的藍線是目前的強化學習權重走過的路徑。換場景的指令見 [`sim_env/SETUP.md`](sim_env/SETUP.md) 5.4。
+
 接著讀 [`docs/專案說明.md`](docs/專案說明.md)；訓練與測試的指令在 [`sim_env/SETUP.md`](sim_env/SETUP.md) 第 6 節。
 要保存自己的成果，請先在 GitHub 上 Fork 這個 repo，再 clone 自己的那一份。
 
@@ -39,7 +49,7 @@ DOGZILLA/
 ├── docs/                     專案文件
 │   ├── project.pptx          專案投影片（目標、硬體、系統架構）
 │   ├── architecture.svg      軟體架構圖
-│   ├── scene_corridor.png, scene_paper_fig4.png, scene_clutter.png   場景 2、3、4 的場地圖
+│   ├── scene_project3.png, scene_corridor.png, scene_paper_fig4.png, scene_clutter.png   場景 1–4 的場地圖
 │   ├── DOGZILLA_專案簡報.pptx  成果報告簡報（13 頁，含講者備註；另附 .pdf 版；2026-10-10 更新）
 │   └── 專案說明.md           給分組 Project 的說明：做了什麼、要做什麼、注意事項
 ├── sim_env/                  模擬環境（本專案開發的部分）

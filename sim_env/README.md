@@ -87,7 +87,7 @@ cd sim_env
 | **場景 4：柱子** | `clutter` | 7 m × 4 m。6 排交錯的柱子（21 根，空隙約 0.55–0.65 m），沒有一條直線可以走 | 密集障礙物 |
 | （未編號） | `obstacle_test` | 6 m × 6 m。3 個方塊 + 3 個圓柱 | 最早的測試場地 |
 
-場地圖（障礙物與目標點的順序；場景 2、4 兩張的藍線是目前的權重走過的路徑）：場景 2 `docs/scene_corridor.png`、場景 3 `docs/scene_paper_fig4.png`、場景 4 `docs/scene_clutter.png`。
+場地圖（障礙物與目標點的順序；場景 2、4 兩張的藍線是目前的權重走過的路徑）：場景 1 `docs/scene_project3.png`、場景 2 `docs/scene_corridor.png`、場景 3 `docs/scene_paper_fig4.png`、場景 4 `docs/scene_clutter.png`。
 
 `corridor`、`clutter`、`paper_fig4` 的障礙物與目標點定義在 **`rl/scenes.py`**（Gazebo 場地檔、benchmark、2D 評估共用同一份）。
 **要加新場地**：在 `rl/scenes.py` 的 `SCENES` 加一項 → `python3 tools/make_world.py` 產生 `worlds/<名稱>.world` →

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """画 rl/scenes.py 里的测试场地 (障碍物、7 个目标点的顺序), 可叠上 tools/path_record.py 录的真值路径:
-    python3 tools/plot_scene.py <场地名称> <输出.png> [path.csv]"""
+    python3 tools/plot_scene.py <场地名称> <输出.png> [path.csv]      场地名称: project3 / corridor / paper_fig4 / clutter"""
 import csv, os, sys
 import matplotlib
 matplotlib.use('Agg')
@@ -13,7 +13,12 @@ for f in ('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',):
     try: font_manager.fontManager.addfont(f)
     except Exception: pass
 plt.rcParams['font.family'] = ['Noto Sans CJK TC', 'Noto Sans CJK JP', 'sans-serif']
-s = SCENES[sys.argv[1]]
+if sys.argv[1] == 'project3':      # 場景 1 定義在 nav_env.py / benchmark_nav.py (不在 scenes.py)
+    from nav_env import PROJECT3, PROJECT3_WALLS
+    s = dict(walls=PROJECT3_WALLS, obstacles=PROJECT3,
+             goals=[(5.9, 1.1), (0.0, 0.0), (5.6, -1.5), (0.3, 1.5), (3.1, 0.6), (1.5, -1.5), (5.9, 1.1)])
+else:
+    s = SCENES[sys.argv[1]]
 _w = [o for o in s['walls']]; _ar = (max(o[2] for o in _w) - min(o[2] for o in _w) + 0.6) / (max(o[1] for o in _w) - min(o[1] for o in _w) + 0.6)
 fig, ax = plt.subplots(figsize=(7.2, max(4.4, 7.2 * _ar * 0.92)), dpi=170)
 for o in s['walls'] + s['obstacles']:
