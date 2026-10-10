@@ -117,16 +117,16 @@ docker exec dogzilla-sim bash -lc 'source /opt/ros/humble/setup.bash;
 1. 在 RViz 上方工具列點 **2D Goal Pose**
 2. 在地圖上點一下（按住拖曳可以設定朝向）
 3. 機器狗會自己規劃路徑往目標走。預設場地是窄通道加死巷（`corridor`），綠色柱子是第 1 個測試目標。
-   注意：`./run.sh sim` 用的是 Nav2 的 DWB 控制器；強化學習（`./run.sh sim rl`）目前只附基準權重，常會卡住，這是待完成的工作
+   注意：`./run.sh sim` 用的是 Nav2 的 DWB 控制器；強化學習（`./run.sh sim rl`）只附未訓練的空白權重，不會往目標走，訓練是待完成的工作
 
 ### 5.4 其他啟動方式
 
 ```bash
 ./run.sh sim rpp                                       # 改用 Nav2 Regulated Pure Pursuit 控制器
-./run.sh sim rl                                        # 改用強化學習避障 (預設權重 rl/models/policy.npz, 目前是基準權重)
+./run.sh sim rl                                        # 改用強化學習避障 (預設權重 rl/models/policy.npz, 目前是未訓練的空白權重)
 ./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz   # 強化學習, 指定自己訓練的權重
 ./run.sh sim dwb gui:=false rviz:=false                # 無頭模式 (沒有桌面、或跑長時間測試時用)
-./run.sh sim rl world:=/worlds/clutter.world           # 換場地: clutter (密集障礙物) / project3 (投影片場景) / obstacle_test
+./run.sh sim rl world:=/worlds/clutter.world           # 換場地: clutter (密集障礙物) / paper_fig4 (論文地圖) / project3 (投影片場景) / obstacle_test
 ```
 
 ### 5.5 停止與其他指令
@@ -188,8 +188,8 @@ env -u PYTHONPATH .venv/bin/python train.py 2e6 models/my_run2 --shield --init=m
 ### 6.3 評估與畫圖
 
 ```bash
-# 在 2D 環境比較多個模型 (obstacle_test、project3、隨機場景、corridor、clutter 各一組; 全部跑完約 10~20 分鐘)
-env -u PYTHONPATH .venv/bin/python eval_compare.py "基準=models/policy.npz" "新=models/my_run/best/policy.npz"
+# 在 2D 環境比較多個模型 (obstacle_test、project3、隨機場景、corridor、clutter、paper_fig4 各一組; 全部跑完約 10~20 分鐘)
+env -u PYTHONPATH .venv/bin/python eval_compare.py "新=models/my_run/best/policy.npz" "另一版=models/my_run2/best/policy.npz"
 # 路徑後面可加 +shield (強制開安全保護)、+875g (速度模型加上「原地轉時慢慢後退」, 較接近 Gazebo)
 
 # 畫訓練曲線 (用模擬映像裡的 matplotlib, 主機不用另外安裝)
@@ -222,8 +222,7 @@ docker run --rm -v "$PWD":/w -v /usr/share/fonts/opentype/noto:/fonts:ro -w /w d
 部署節點每 2 秒向 Nav2 重新規劃一次路徑，並發佈 `/rl_intent`（安全保護之前 RL 想要的速度），方便診斷。
 S1 在 Gazebo 的實際速度反應可以用 `tools/speed_response.py` 量測（需以空場地啟動，見檔頭說明）。
 
-確認比基準好之後，再把 `policy.npz` 與 `ppo_nav.zip` 複製到 `rl/models/` 成為預設權重（建議先備份舊的）。
-目前的基準在 Gazebo 的成績見 `README.md` 的「Benchmark 結果（基準）」。
+確認能用之後，再把 `policy.npz` 與 `ppo_nav.zip` 複製到 `rl/models/` 成為預設權重（原本放的是未訓練的空白權重）。
 
 ---
 

@@ -159,7 +159,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value='/worlds/corridor.world',
-                              description='/worlds/corridor.world (窄通道 + 死巷, 預設) | /worlds/clutter.world (密集障礙物) | /worlds/project3.world (project.pptx 第 1 頁場景) | /worlds/obstacle_test.world (舊場地)'),
+                              description='/worlds/corridor.world (窄通道 + 死巷, 預設) | /worlds/clutter.world (密集障礙物) | /worlds/paper_fig4.world (論文 Fig. 4 的地圖) | /worlds/project3.world (project.pptx 第 1 頁場景) | /worlds/obstacle_test.world (舊場地)'),
         DeclareLaunchArgument('controller', default_value='dwb', description='dwb | rpp | rl'),
         DeclareLaunchArgument('rl_policy', default_value='/rl/models/policy.npz',
                               description='controller:=rl 時使用的權重檔, 例 /rl/models/my_run/best/policy.npz'),

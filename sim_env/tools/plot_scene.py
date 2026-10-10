@@ -14,7 +14,8 @@ for f in ('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',):
     except Exception: pass
 plt.rcParams['font.family'] = ['Noto Sans CJK TC', 'Noto Sans CJK JP', 'sans-serif']
 s = SCENES[sys.argv[1]]
-fig, ax = plt.subplots(figsize=(7.2, 4.4), dpi=170)
+_w = [o for o in s['walls']]; _ar = (max(o[2] for o in _w) - min(o[2] for o in _w) + 0.6) / (max(o[1] for o in _w) - min(o[1] for o in _w) + 0.6)
+fig, ax = plt.subplots(figsize=(7.2, max(4.4, 7.2 * _ar * 0.92)), dpi=170)
 for o in s['walls'] + s['obstacles']:
     fc, ec = ('#B9BEC5', '#8A9099') if o in s['walls'] else ('#D9DDE2', '#6B7480')
     ax.add_patch(Rectangle((o[1] - o[3] / 2, o[2] - o[4] / 2), o[3], o[4], fc=fc, ec=ec, lw=0.8) if o[0] == 'box' else Circle((o[1], o[2]), o[3], fc=fc, ec=ec, lw=0.8))
@@ -29,7 +30,8 @@ for (gx, gy), ids in seen.items():
     if (gx, gy) != (0.0, 0.0):
         ax.plot(gx, gy, '*', color='#C0392B', ms=13)
     ax.text(gx + 0.1, gy + 0.12, '目標 ' + '、'.join(ids), fontsize=8.5, color='#C0392B')
-ax.set_xlim(-0.9, 6.7); ax.set_ylim(-2.3, 2.3); ax.set_aspect('equal'); ax.set_xlabel('x (m)', fontsize=9); ax.set_ylabel('y (m)', fontsize=9); ax.tick_params(labelsize=8)
+wx = [o[1] for o in s['walls']]; wy = [o[2] for o in s['walls']]
+ax.set_xlim(min(wx) - 0.3, max(wx) + 0.3); ax.set_ylim(min(wy) - 0.3, max(wy) + 0.3); ax.set_aspect('equal'); ax.set_xlabel('x (m)', fontsize=9); ax.set_ylabel('y (m)', fontsize=9); ax.tick_params(labelsize=8)
 for sp in ('top', 'right'): ax.spines[sp].set_visible(False)
 if len(sys.argv) > 3: ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.13), frameon=False, fontsize=8.5)
 fig.tight_layout(); fig.savefig(sys.argv[2], facecolor='white'); print('saved', sys.argv[2])

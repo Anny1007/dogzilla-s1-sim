@@ -8,9 +8,7 @@
 
 | 檔案 | 機器狗模型 | 場地 | 階段 |
 |---|---|---|---|
-| `bench_corridor_rl_baseline.csv` / `bench_clutter_rl_baseline.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor / clutter | **目前的起點**：RL 基準權重（訓練 10 萬步） |
-| `path_corridor_rl_baseline.csv` / `path_clutter_rl_baseline.csv` | 同上 | corridor / clutter | 上面兩次執行的真值路徑（`tools/path_record.py`；`tools/plot_scene.py` 可畫出來） |
-| `bench_corridor_rpp.csv` | 同上 | corridor | Nav2 RPP |
+| `bench_corridor_rpp.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor | Nav2 RPP |
 | `bench_s1_875g_rpp.csv` / `_dwb` | 同上 | project3 | Nav2 RPP / DWB |
 
 較早期（625 g 模型、方塊模型、放大模型）的 benchmark 與所有舊的 RL 權重、訓練紀錄已於 2026-10-10 移除。
@@ -53,5 +51,4 @@
 
 | 檔案 | 內容 |
 |---|---|
-| `baseline_100k_eval.csv` | 基準權重訓練時的評估（10 萬步，200 個固定場景到達 63 個） |
-| `baseline_eval_2d.txt` | 基準權重與「追路徑點」傳統基準在 2D 環境各場地的到達率（`rl/eval_compare.py` 的輸出） |
+| （目前是空的） | 沒有附訓練過的權重，也沒有訓練紀錄；自己訓練的紀錄可以放這裡 |

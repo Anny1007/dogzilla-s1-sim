@@ -1,5 +1,5 @@
 """在 2D 环境比较多个策略 (部署方式: 沿全局路径的瞄准点):
-    python eval_compare.py [名称=权重.npz[+shield] ...]      默认只评估 models/policy.npz (基准权重)
+    python eval_compare.py [名称=权重.npz[+shield] ...]      默认评估 models/policy.npz (目前是未训练的空白权重)
 权重档训练时有安全保护会自动开启; 在路径后面加 +shield 可以强制开启 (例如测试旧模型 + 安全保护),
 加 +875g 改用含「原地转时慢慢后退」的速度模型评估 (较接近 Gazebo), 例如 "新=models/my_run/best/policy.npz+875g"。
 
@@ -66,7 +66,7 @@ def summary(res):
 
 
 if __name__ == '__main__':
-    specs = sys.argv[1:] or ['基准=models/policy.npz']
+    specs = sys.argv[1:] or ['models=models/policy.npz']
     pols = []
     for spec in specs:
         name, path = spec.split('=')

@@ -4,7 +4,7 @@
 #   ./run.sh colcon                編譯 CHAMP 工作區 (第一次)
 #   ./run.sh sim [dwb|rpp|rl] [launch 參數...]   一鍵啟動完整模擬 (Gazebo + SLAM + Nav2 + 控制器 + RViz)
 #                                  例: ./run.sh sim rl      ./run.sh sim dwb gui:=false rviz:=false
-#   ./run.sh bench <label> [dwb|rpp|rl] [corridor|clutter|project3|obstacle_test]
+#   ./run.sh bench <label> [dwb|rpp|rl] [corridor|clutter|paper_fig4|project3|obstacle_test]
 #                                  在已啟動的模擬上跑避障 benchmark, 結果存 logs/bench_<label>.csv
 #                                  (場地要與啟動時一致; 預設 corridor = 窄通道 + 死巷; 換場地啟動: ./run.sh sim rl world:=/worlds/clutter.world)
 #   ./run.sh shell                 另開一個 shell 進到正在跑的模擬容器 (沒在跑就開新容器)

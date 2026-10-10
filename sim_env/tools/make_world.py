@@ -19,7 +19,13 @@ def model(name, o, color):
 
 
 for name in sys.argv[1:] or SCENES:
-    s = SCENES[name]; out = head + f'<!-- 由 tools/make_world.py 依 rl/scenes.py 的 {name} 产生, 请勿手动修改 -->\n'
+    s = SCENES[name]
+    # Gazebo 视窗的初始镜头: 从场地南侧斜上方看向场地中心 (project3.world 原本的镜头是给 7 m x 4 m 场地用的)
+    xs = [o[1] for o in s['walls']]; ys = [o[2] for o in s['walls']]
+    cx, cy, span = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(max(xs) - min(xs), max(ys) - min(ys))
+    cam = f"<pose frame=''>{cx:.2f} {cy - 0.85 * span:.2f} {0.75 * span:.2f} 0 0.72 1.5708</pose>" if span > 7.5 else None
+    h = head.replace("<pose frame=''>2.9 -5.0 4.2 0 0.72 1.5708</pose>", cam) if cam else head
+    out = h + f'<!-- 由 tools/make_world.py 依 rl/scenes.py 的 {name} 产生, 请勿手动修改 -->\n'
     for i, o in enumerate(s['walls']):
         out += model(f'wall_{i}', o, '0.6 0.6 0.6')
     for i, o in enumerate(s['obstacles']):

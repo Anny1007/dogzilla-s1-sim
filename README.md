@@ -15,7 +15,7 @@ DOGZILLA/
 ├── docs/                     專案文件
 │   ├── project.pptx          專案投影片（目標、硬體、系統架構）
 │   ├── architecture.svg      軟體架構圖
-│   ├── scene_corridor.png, scene_clutter.png   測試場地圖（含基準權重走過的路徑）
+│   ├── scene_corridor.png, scene_clutter.png, scene_paper_fig4.png   測試場地圖
 │   ├── DOGZILLA_專案簡報.pptx  成果報告簡報（13 頁，含講者備註；另附 .pdf 版；2026-10-10 更新）
 │   └── 專案說明.md           給接手組員的說明：做了什麼、要做什麼、注意事項
 ├── sim_env/                  模擬環境（本專案開發的部分）
@@ -62,12 +62,12 @@ cd sim_env
 | 機器狗模型 | 使用 Yahboom 官方 DOGZILLA S1 URDF（為模擬做的修正都有記錄）；重量為實機秤重：本體 875 g + 加裝的 DOGZILLA S2 LiDAR 45 g |
 | LiDAR 安裝位置 | 機身中線、比官方位置再往後 4.3 cm（`x = −0.06 m`）：模擬比較 8 個前後位置後，對行走平衡影響最小的位置 |
 | 走路晃動 | 920 g 下前進時機身晃動 RMS 約 2.5°、最大傾斜約 5°（依新重量重調過關節增益） |
-| 測試場地 | 預設是比投影片場景更難的 `corridor`（蛇行通道、0.6 m 門口、死巷），另有 `clutter`（密集柱子）；投影片場景 `project3` 仍保留 |
-| 連續 7 個目標點的到達率（基準） | `corridor`：RL 基準權重 3/7（過不了 0.6 m 的門口）、Nav2 RPP 0/7；`clutter`：RL 基準權重 1/7。都沒有擦碰或翻倒，但卡住走不到（各為單次執行） |
-| **強化學習避障** | **待完成**。訓練與部署的程式都在（PPO，`sim_env/rl/`），目前只附一份訓練 10 萬步的基準權重，常卡在牆邊或門口前。要做的事寫在 `sim_env/README.md` 的「RL 避障控制器 → 待完成的工作」，只需要模擬 |
+| 測試場地 | 預設是比投影片場景更難的 `corridor`（蛇行通道、0.6 m 門口、死巷），另有 `clutter`（密集柱子）與 `paper_fig4`（照論文 Fig. 4 的柵格地圖建立，10 m × 10 m，只有靜態障礙物）；投影片場景 `project3` 仍保留 |
+| 傳統方法（Nav2）的成績 | `corridor`：RPP 0/7；`project3`：RPP 1/7、DWB 0/7（各為單次執行）。走得慢、定位誤差累積 |
+| **強化學習避障** | **待完成**。訓練環境、訓練腳本、部署節點都在（PPO，`sim_env/rl/`），但**沒有附訓練過的權重**（`rl/models/` 裡是未訓練的空白權重，只為了讓管線能啟動）。要做的事寫在 `sim_env/README.md` 的「RL 避障控制器 → 待完成的工作」，只需要模擬 |
 | 實機部署 | 尚未進行 |
 
-詳細數字與分析見 `sim_env/README.md` 的「Benchmark 結果（基準）」與 `sim_env/results/README.md`。
+詳細數字與分析見 `sim_env/README.md` 的「Benchmark 結果」與 `sim_env/results/README.md`。
 
 ## 交付說明
 
