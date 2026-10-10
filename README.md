@@ -4,9 +4,32 @@
 目前以 Gazebo 模擬把整條系統與測試環境建好：LiDAR → SLAM → Nav2 路徑規劃 → 避障（傳統演算法 / 強化學習）→ 步態控制。
 **強化學習的避障還沒做好**：附的是只訓練 10 萬步的初期權重，走得不穩、常卡在牆角或門口前。把它練好是接下來的工作，只需要模擬。
 
-- 第一次接觸：先看 [`docs/專案說明.md`](docs/專案說明.md)（給接手的組員：專案在做什麼、做到哪裡、接下來要做什麼）或簡報 `docs/DOGZILLA_專案簡報.pptx`
+- 第一次接觸：先看 [`docs/專案說明.md`](docs/專案說明.md)（給課堂同學：專案在做什麼、做到哪裡、接下來要做什麼）或簡報 `docs/DOGZILLA_專案簡報.pptx`
 - 在新電腦上建置環境：看 [`sim_env/SETUP.md`](sim_env/SETUP.md)（從安裝 Docker 到確認模擬正常的逐步指南）
 - 要執行或修改模擬：看 [`sim_env/README.md`](sim_env/README.md)（完整技術文件）
+
+## 給課堂同學
+
+這個專案提供的是**建好的模擬環境與機器狗模型**；強化學習的避障只有最初期的版本（走得不穩、會卡在牆角），**把它完成是你們的工作**，全部在模擬裡做，不需要實機。
+
+| 已經提供 | 要你們完成 |
+|---|---|
+| 機器狗模型（本體 875 g + LiDAR 45 g，LiDAR 在走路最穩的位置） | 訓練出能通過各場地的強化學習避障策略 |
+| 整條流程一鍵啟動：LiDAR、建圖、路徑規劃、避障、步態 | 在 `corridor`、`clutter`、`paper_fig4` 三個場地，每個目標都到達、不擦碰、不翻倒 |
+| 四個測試場地、自動評分程式、RViz 點目標時 Gazebo 的藍色終點旗 | 每次修改都放進 Gazebo 驗證，並記錄結果 |
+| 強化學習的訓練環境、訓練腳本、部署節點 | |
+
+開始的步驟：
+
+```bash
+git clone https://github.com/Anny1007/dogzilla-s1-sim.git
+cd dogzilla-s1-sim/sim_env
+./run.sh build && ./run.sh colcon     # 第一次：建環境（約 15~25 分鐘，需要 Ubuntu + Docker）
+./run.sh sim rl                        # 啟動模擬，看目前的強化學習怎麼走、卡在哪裡
+```
+
+接著讀 [`docs/專案說明.md`](docs/專案說明.md)；訓練與測試的指令在 [`sim_env/SETUP.md`](sim_env/SETUP.md) 第 6 節。
+要保存自己的成果，請先在 GitHub 上 Fork 這個 repo，再 clone 自己的那一份。
 
 ## 資料夾結構
 
@@ -18,7 +41,7 @@ DOGZILLA/
 │   ├── architecture.svg      軟體架構圖
 │   ├── scene_corridor.png, scene_clutter.png, scene_paper_fig4.png   測試場地圖
 │   ├── DOGZILLA_專案簡報.pptx  成果報告簡報（13 頁，含講者備註；另附 .pdf 版；2026-10-10 更新）
-│   └── 專案說明.md           給接手組員的說明：做了什麼、要做什麼、注意事項
+│   └── 專案說明.md           給課堂同學的說明：做了什麼、要做什麼、注意事項
 ├── sim_env/                  模擬環境（本專案開發的部分）
 │   ├── README.md             技術文件：使用方式、設計、遇到的問題與解法、測試結果
 │   ├── SETUP.md              環境建置指南：安裝、建置、驗證、強化學習訓練環境、常見問題
