@@ -1,0 +1,8 @@
+label,leg,goal,status,success,time_s,path_m,final_err_m,min_clearance_m,collisions,slam_err_m,flipped
+clutter_rl_baseline,1,"(5.95,0.5)",TIMEOUT,0,150.0,9.15,2.25,0.13,0,0.47,0
+clutter_rl_baseline,2,"(0.0,0.0)",TIMEOUT,0,150.0,8.66,1.44,0.15,0,0.1,0
+clutter_rl_baseline,3,"(5.95,-1.5)",TIMEOUT,0,150.0,7.8,2.69,0.21,0,0.78,0
+clutter_rl_baseline,4,"(0.1,1.5)",TIMEOUT,0,150.0,7.78,2.45,0.22,0,0.08,0
+clutter_rl_baseline,5,"(3.25,0.25)",TIMEOUT,0,150.0,6.89,1.65,0.2,0,0.48,0
+clutter_rl_baseline,6,"(0.1,-1.5)",SUCCEEDED,1,45.3,3.17,0.28,0.22,0,0.27,0
+clutter_rl_baseline,7,"(5.95,0.5)",TIMEOUT,0,150.0,10.25,2.65,0.22,0,0.45,0

@@ -1,5 +1,5 @@
 """起停壓力測試: 前進速度指令在 0 與 V 之間來回 (方波, 經 0.5 m/s² 加速度限制, 與 RL 節點輸出相同), 同時小幅左右轉向,
-看機身最大傾斜與是否翻倒。RL 在障礙物旁猶豫時就是這種指令 (results/training/flip_v6_vmax020.txt)。
+看機身最大傾斜與是否翻倒。RL 在障礙物旁猶豫時就是這種指令。
 用法 (空場地啟動後): python3 startstop_test.py <V> [週期秒=1.2] [總秒數=60]"""
 import math, sys, time
 import rclpy

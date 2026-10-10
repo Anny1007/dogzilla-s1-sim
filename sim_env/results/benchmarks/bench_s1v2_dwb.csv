@@ -1,8 +1,0 @@
-label,leg,goal,status,success,time_s,path_m,final_err_m,min_clearance_m,collisions,slam_err_m,flipped
-s1v2_dwb,1,"(2.2,0.0)",SUCCEEDED,0,65.0,7.16,0.38,0.37,0,0.11,0
-s1v2_dwb,2,"(-2.0,0.3)",SUCCEEDED,0,123.3,11.0,0.73,0.22,0,0.23,0
-s1v2_dwb,3,"(2.2,-1.8)",SUCCEEDED,0,46.5,6.23,0.7,0.33,0,0.22,0
-s1v2_dwb,4,"(-2.0,-2.0)",SUCCEEDED,1,73.0,7.85,0.24,0.25,0,0.22,0
-s1v2_dwb,5,"(2.2,1.8)",SUCCEEDED,1,80.2,8.32,0.24,0.3,0,0.07,0
-s1v2_dwb,6,"(-1.8,1.8)",SUCCEEDED,0,71.4,7.69,0.77,0.37,0,0.63,0
-s1v2_dwb,7,"(0.0,0.0)",ABORTED,0,44.6,3.05,1.48,0.25,0,0.54,0

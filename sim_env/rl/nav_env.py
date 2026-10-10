@@ -10,28 +10,19 @@
   指令 0.2 m/s -> 实际约 0.134 m/s, 原地转 0.8 rad/s -> 实际约 0.75 rad/s;
   边走边转时前进速度明显下降 (0.15 m/s + 0.5 rad/s -> 实际前进约 0.034 m/s), 用 TURN_SLOWDOWN 近似。
 
-v2 (相对 v1, v1 原文件备份在 models/nav_env_v1_backup.py):
-  1. 场景: 场地大小随机 (4~8 m x 3.5~6 m), 除了零散小障碍物, 还有长墙、从围墙伸出的隔墙、U 形陷阱、走廊;
-     目标改为沿全局路径的瞄准点 (与部署相同), 进度奖励改用沿路径的距离 (绕路不再被扣分)
-  2. 碰撞扣分 15 -> 50, 到达奖励 15 -> 30 (gamma 0.995 在 train.py)
-  3. 允许小幅后退 (V_MIN -0.05 m/s); 25% 的回合从贴近障碍物处出发, 学习脱困
-v3: NavEnv(shield=True) 在动作执行前加上安全保护 (safety_shield.py, 参考 2026_Steven_paper):
-  RL 的意图投影到最近的安全候选速度; 介入时小幅扣分 (SHIELD_PENALTY, 本项目自加), 让 RL 学会直接提出安全动作
-v4: 转向抖动扣分。Gazebo 里 v3 在前进中每 0.2~0.4 s 反转一次转向, 机身左右晃到翻倒 (tools/flip_monitor.py 纪录);
-  2D 环境没有翻倒, 原本学不到要避开。前进中转向反转 (REVERSAL_PENALTY) 与转向变化量 x 速度 (STEER_RATE_PENALTY) 都扣分。
-  两个权重是凭经验定的, 没有用翻倒的物理模型校准。
-v5: 速度模型改用 Gazebo 实测 (rl_policy.speed_model_measured): 低速死区、不能后退、快速转弯明显减速;
-  动作上限改为 0.15 m/s (0.2 m/s 加转向会翻倒), 最低 0 (不能后退)。v4 的转向扣分已停用。
-  v1~v3 的权重用 NavEnv(v_min, v_max, speed_model='linear') 评估。
-v6: 模型改成实机重量 (本体 875 g + LiDAR 45 g, LiDAR 后移到 x=-0.06, 关节 p=14), 速度模型重新实测
-  (rl_policy.speed_model_875g, 含运动安全滤波的转弯降速、原地转时慢慢后退)。
-  动作上限维持 0.15 m/s: 新重量下稳定走 0.2 m/s 加转向不再翻倒 (最大倾斜 7 度), 但 0.2 m/s 的急起急停会
-  (tools/startstop_test.py, results/startstop_test_875g.txt: 0.20 时倾斜达 57~60 度, 0.15 时最大 10 度)。
-  先试过上限 0.20 的版本, 2D 评估很好, 放进 Gazebo 在障碍物旁「停-冲」几次后翻倒 (results/training/flip_v6_vmax020.txt)。
-  上限 0.15 从零训练 4M 步只到 70~87%, 比 v5 权重差; 改成以 v5 为起点接着训练 2M 步 (train.py --init=...), 采用这一版
-  (models/s1_v6_finetune/, 用不含后退的 measured_875g_nocreep 模型训练)。v5 的权重用 NavEnv(speed_model='measured') 评估。
-  手工方块模型 (s1_box) 版本的权重在 models/s1_box/。
-  旧 CHAMP 放大模型的版本与权重在 models/champ_old/ (COLLIDE_DIST 0.12, V_MAX 0.3, V_GAIN 0.7, W_GAIN 0.9)
+环境的设计 (之前几轮训练留下的做法与教训; 旧的权重与训练纪录已移除, 目前只附一份只训练 10 万步的基准权重):
+  1. 场景: 场地大小随机 (4~8 m x 3.5~6 m), 有零散小障碍物、长墙、从围墙伸出的隔墙、U 形陷阱、走廊。
+     目标是沿全局路径的瞄准点 (与部署相同), 进度奖励用沿路径的距离 (绕路不会被扣分)
+  2. 碰撞扣 50 分, 到达加 30 分 (gamma 0.995 在 train.py); 25% 的回合从贴近障碍物处出发, 学习脱困
+  3. NavEnv(shield=True) 在动作执行前加上安全保护 (safety_shield.py): RL 的意图投影到最近的安全候选速度;
+     介入时小幅扣分 (SHIELD_PENALTY), 让 RL 学会直接提出安全动作
+  4. 试过「转向抖动扣分」(REVERSAL_PENALTY / STEER_RATE_PENALTY): RL 学会站着不动, 已停用 (权重设 0)
+  5. 速度模型用 Gazebo 实测 (rl_policy.speed_model_875g: 本体 875 g + LiDAR 45 g, LiDAR 在 x=-0.06, 关节 p=14),
+     含低速死区、运动安全滤波的转弯降速。环境变量 NAV_SPEED_MODEL=measured_875g 会再加上「原地转时慢慢后退」
+  6. 动作上限 0.15 m/s: 稳定走 0.2 m/s 没问题, 但 0.2 m/s 的急起急停会翻倒
+     (tools/startstop_test.py, results/startstop_test_875g.txt: 0.20 时倾斜达 57~60 度, 0.15 时最大 10 度)。
+     2D 环境里没有翻倒, 上限 0.20 的策略在 2D 评估很好, 放进 Gazebo 却在障碍物旁「停-冲」几次后翻倒
+  7. 训练时没有用到 rl/scenes.py 的 corridor / clutter 场地 (只用来评估); 窄门口 (0.6 m) 与密集柱子是目前的弱点
 """
 import heapq
 import math
@@ -50,7 +41,7 @@ R_MIN, R_MAX = 0.12, 3.5
 COLLIDE_DIST = 0.16    # S1 机身 200 x 78 mm (含相机 216 mm), 原地转时机身前角扫过半径约 0.13 m, 再留余量
 GOAL_RADIUS = 0.25
 V_MAX, W_MAX = 0.20, 1.0      # 观测里速度的归一化常数 (与 rl_policy 相同, 不要改)
-V_MIN, V_CMD_MAX = 0.0, 0.15  # 动作范围: 不能后退; 0.2 m/s 急起急停会翻倒 (见上面 v6 说明)
+V_MIN, V_CMD_MAX = 0.0, 0.15  # 动作范围: 不能后退; 0.2 m/s 急起急停会翻倒 (见上面第 6 点)
 # 训练用的速度模型 (rl_policy.SPEED_MODELS); 环境变量 NAV_SPEED_MODEL 可以换 (例如 measured_875g = 多了原地转时慢慢后退)
 SPEED_MODEL = os.environ.get('NAV_SPEED_MODEL', 'measured_875g_nocreep')
 # 速度反应参数 V_GAIN / V_TAU / TURN_SLOWDOWN / W_GAIN / W_TAU 在 rl_policy.py (部署时也要用)

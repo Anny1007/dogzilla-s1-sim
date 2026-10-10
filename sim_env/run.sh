@@ -4,9 +4,9 @@
 #   ./run.sh colcon                編譯 CHAMP 工作區 (第一次)
 #   ./run.sh sim [dwb|rpp|rl] [launch 參數...]   一鍵啟動完整模擬 (Gazebo + SLAM + Nav2 + 控制器 + RViz)
 #                                  例: ./run.sh sim rl      ./run.sh sim dwb gui:=false rviz:=false
-#   ./run.sh bench <label> [dwb|rpp|rl] [project3|obstacle_test]
+#   ./run.sh bench <label> [dwb|rpp|rl] [corridor|clutter|project3|obstacle_test]
 #                                  在已啟動的模擬上跑避障 benchmark, 結果存 logs/bench_<label>.csv
-#                                  (場地要與啟動時一致; 預設 project3 = project.pptx 第 1 頁場景)
+#                                  (場地要與啟動時一致; 預設 corridor = 窄通道 + 死巷; 換場地啟動: ./run.sh sim rl world:=/worlds/clutter.world)
 #   ./run.sh shell                 另開一個 shell 進到正在跑的模擬容器 (沒在跑就開新容器)
 #   ./run.sh stop                  停止模擬
 #
@@ -27,7 +27,7 @@ case "$1" in
   bench)
     running || { echo "請先 ./run.sh sim ..."; exit 1; }
     MODE=nav2; [ "$3" = rl ] && MODE=rl
-    docker exec -it $NAME bash -lc "source /opt/ros/humble/setup.bash; python3 /benchmark_nav.py ${2:-run} $MODE ${4:-project3}" ;;
+    docker exec -it $NAME bash -lc "source /opt/ros/humble/setup.bash; python3 /benchmark_nav.py ${2:-run} $MODE ${4:-corridor}" ;;
   shell)
     xhost +local:docker >/dev/null 2>&1
     if running; then docker exec -it $NAME bash; else docker compose run --rm dogzilla bash; fi ;;

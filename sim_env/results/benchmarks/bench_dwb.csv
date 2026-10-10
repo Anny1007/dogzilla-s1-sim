@@ -1,8 +1,0 @@
-label,leg,goal,status,success,time_s,path_m,final_err_m,min_clearance_m,collisions
-dwb,1,"(2.2,0.0)",SUCCEEDED,1,50.4,8.5,0.13,0.58,0
-dwb,2,"(-2.0,0.3)",SUCCEEDED,1,55.3,9.63,0.14,0.53,0
-dwb,3,"(2.2,-1.8)",SUCCEEDED,1,76.1,13.24,0.04,0.41,0
-dwb,4,"(-2.0,-2.0)",SUCCEEDED,0,79.6,14.3,0.41,0.46,0
-dwb,5,"(2.2,1.8)",SUCCEEDED,1,50.7,9.01,0.19,0.52,0
-dwb,6,"(-1.8,1.8)",SUCCEEDED,0,137.2,15.79,1.04,0.33,0
-dwb,7,"(0.0,0.0)",ABORTED,0,103.8,13.02,0.71,0.23,0

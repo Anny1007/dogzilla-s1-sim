@@ -66,39 +66,35 @@ cd sim_env
 ./run.sh bench my_test dwb            # 自動跑 7 個目標點, 結果存 logs/bench_my_test.csv
 ./run.sh bench my_rl  rl              # (模擬需以 ./run.sh sim rl 啟動)
 
-# 舊場地: 啟動與 benchmark 都要指定
-./run.sh sim dwb world:=/worlds/obstacle_test.world
-./run.sh bench old_dwb dwb obstacle_test
+# 換場地: 啟動與 benchmark 都要指定 (預設 corridor; 另有 clutter / project3 / obstacle_test, 見「場地」)
+./run.sh sim rl world:=/worlds/clutter.world
+./run.sh bench my_rl_clutter rl clutter
 ```
 
 ## 場地
 
-預設場地 `worlds/project3.world` 照 `project.pptx` 第 1 頁的 Simulated obstacle field 與 Concept diagram 建立：
+四個場地都是圍牆圍起來的平地，機器狗在原點朝 +x 生成，障礙物高度統一 1 m（2D LiDAR 的掃描平面會隨步態傾斜，
+障礙物要明顯高於它，見「LiDAR 地面點過濾」）。啟動時用 `world:=/worlds/<名稱>.world` 選，benchmark 的第 3 個參數給同一個名稱。
 
-```
- y=2  +----------------------------+----+---------------+
-      |                     [B]    | W  |           *   |
-      |        +---+               | W  |               |
- y=0  |  S     | L |               +----+ (O)           |
-      |        +---+                                    |
-      |                   (C)                  (C)      |
- y=-2 +-------------------------------------------------+
-    x=-0.6                                            x=6.4
+| 場地 | 內容 | 用途 |
+|---|---|---|
+| **`corridor`（預設）** | 7 m × 4 m。兩道交錯的長牆（要蛇行，缺口寬 0.85 m）、一道只留 0.6 m 門口的牆、門後一個開口朝門的 U 形死巷；第 1 個目標在死巷正後方 | **主要的測試場地**：窄通道、門口、死巷 |
+| `clutter` | 7 m × 4 m。6 排交錯的柱子（21 根，空隙約 0.55–0.65 m），沒有一條直線可以走 | 密集障礙物 |
+| `project3` | 7 m × 4 m。`project.pptx` 第 1 頁的場景：長方塊、小方塊、隔牆、三根圓柱，目標在右上角 | 投影片的原始場景，比較簡單 |
+| `obstacle_test` | 6 m × 6 m。3 個方塊 + 3 個圓柱 | 最早的測試場地 |
 
- S 起點 (0,0)   L 長方塊   B 小方塊   W 從北牆伸下的隔牆
- O 橘色圓柱     C 灰色圓柱  * 目標 (5.9, 1.1)
-```
+場地圖（障礙物、7 個目標點的順序，藍線是基準權重走過的路徑）：`docs/scene_corridor.png`、`docs/scene_clutter.png`。
 
-- 7 m × 4 m 圍牆場地，機器狗在原點朝 +x 生成，正前方被長方塊擋住
-- 投影片的任務：從起點繞過長方塊、從隔牆與橘色圓柱下方穿過，走到右上角的綠色目標（目標標記只有外觀、沒有碰撞，LiDAR 看不到）
-- 障礙物高度統一 1 m（投影片示意圖較矮，但 2D LiDAR 掃描平面會隨步態傾斜，障礙物要明顯高於它，見「LiDAR 地面點過濾」）
-- 目標在起點看不到的地方（被長方塊與隔牆擋住），要邊走邊用 SLAM 建圖、重新規劃
+`corridor` 與 `clutter` 的障礙物與目標點定義在 **`rl/scenes.py`**（Gazebo 場地檔、benchmark、2D 評估共用同一份）。
+**要加新場地**：在 `rl/scenes.py` 的 `SCENES` 加一項 → `python3 tools/make_world.py` 產生 `worlds/<名稱>.world` →
+`python3 tools/plot_scene.py <名稱> 圖.png` 看一下長相 → `./run.sh sim rl world:=/worlds/<名稱>.world`。
+起點後方要留 0.8 m 以上（機器狗靜止時會慢慢往後滑），目標點離障礙物表面至少 0.35 m。
 
 ## 檔案說明
 
 | 路徑 | 內容 |
 |---|---|
-| `launch/dogzilla_sim.launch.py` | 一鍵啟動整條管線，參數 `controller:=dwb\|rpp\|rl`、`model:=s1\|s1_box\|champ`、`gui`、`rviz`、`world`（預設 `/worlds/project3.world`） |
+| `launch/dogzilla_sim.launch.py` | 一鍵啟動整條管線，參數 `controller:=dwb\|rpp\|rl`、`model:=s1\|s1_box\|champ`、`gui`、`rviz`、`world`（預設 `/worlds/corridor.world`） |
 | `launch/dogzilla_sim.rviz` | RViz 設定：SLAM 地圖、costmap、LiDAR、Nav2 路徑、RL 路徑 |
 | `launch/scan_ground_filter.py` | LiDAR 地面點過濾節點（見下方說明，實機也適用） |
 | `launch/cmd_vel_safety.py` | 運動安全濾波 `/cmd_vel_raw` → `/cmd_vel`（轉彎降速、限制轉向變化率，實機也適用） |
@@ -108,10 +104,11 @@ cd sim_env
 | `description/dogzilla_s1.urdf.xacro` | 手工方塊模型（`model:=s1_box`，對照用） |
 | `config/gait_s1.yaml` / `config/ros_control_s1.yaml` | S1 的步態參數與關節 PID |
 | `description/dogzilla_sim.urdf.xacro` | 舊的 CHAMP/XGO 放大模型（`model:=champ`，見「Gazebo 崩潰修正」） |
-| `worlds/project3.world` | **預設場地**，照 `project.pptx` 第 1 頁的場景與 Concept diagram 建立（見下方「場地」） |
+| `worlds/corridor.world`、`clutter.world` | **預設場地**（窄通道 + 死巷）與密集障礙物場地，由 `tools/make_world.py` 依 `rl/scenes.py` 產生（見「場地」） |
+| `worlds/project3.world` | 照 `project.pptx` 第 1 頁的場景建立（`world:=/worlds/project3.world`） |
 | `worlds/obstacle_test.world` | 舊的 6 m × 6 m 圍牆場地，3 個方塊 + 3 個圓柱障礙物（`world:=/worlds/obstacle_test.world`） |
 | `nav2_params.yaml` / `nav2_params_rpp.yaml` | Nav2 參數 (DWB / RPP)，尺寸、速度、加速度已依 S1 調整 |
-| `rl/` | RL 避障：`nav_env.py` 2D 光達環境、`train.py` PPO 訓練、`rl_controller.py` ROS 2 節點、`models/` 訓練好的權重 |
+| `rl/` | RL 避障：`nav_env.py` 2D 光達環境、`train.py` PPO 訓練、`rl_controller.py` ROS 2 節點、`scenes.py` 測試場地定義、`models/` 基準權重 |
 | `benchmark_nav.py` | 避障評測：用 Gazebo 真值算到達率、碰撞次數、最小離障距離（第 3 個參數選場地，目標點與障礙物表在檔頭 `WORLDS`） |
 | `tools/` | 診斷與測試工具（見下方「診斷工具」） |
 | `results/` | 已記錄的測試結果：`benchmarks/`（避障 benchmark CSV）、`sweeps/`（參數掃描）、`training/`（RL 訓練紀錄），說明見 `results/README.md` |
@@ -224,8 +221,7 @@ Yahboom 教材 *Rviz simulation in ros2 environment* 用的就是這份）。外
   經濾波後才送到 `/cmd_vel`。實機也適用。
 - **Nav2**：`robot_radius` 0.13 m、膨脹半徑 0.40 m、到達容許誤差 0.15 m、加速度限制 0.5 m/s²。
 - **LiDAR 地面點過濾**：掃描平面離地約 0.19 m，`margin` 0.5、IMU 歷史 0.3 s。
-- **RL 策略**依 920 g 模型的實測速度反應重新訓練（v6，見「RL 避障控制器」）。
-  舊權重（625 g 時期）在 `rl/models/s1_v5_measured/`、`s1_v3_shield/`、`s1_official_2M/` 等，`rl/models/s1_box/` 是手工方塊模型、`rl/models/champ_old/` 是放大模型。
+- **RL 的訓練環境**用的是 920 g 模型的實測速度反應（見「RL 避障控制器」）。
 
 其他模型（對照用）：`model:=s1_box` 是之前依官方尺寸手工做的方塊模型（`description/dogzilla_s1.urdf.xacro`），
 `model:=champ` 是舊的放大模型。
@@ -274,59 +270,24 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 其他修正：LiDAR 射線原點原本在外殼上方 7.5 cm，掃描平面只比 0.5 m 高的障礙物低 1.6 cm，改從 LiDAR 頭部發射；
 場地障礙物與圍牆加高到 1 m（2D LiDAR 需要障礙物高於晃動中的掃描平面）。
 
-## Benchmark 結果
+## Benchmark 結果（基準）
 
-同一場地 7 個目標點依序走完。「控制器回報完成」代表 Nav2 或 RL 認為已到達（導航避障能力）；
-「真值到達」用 Gazebo 真實位置判定（離目標 < 0.35 m），也包含 SLAM 定位誤差。各為單次執行結果。
+`benchmark_nav.py`：同一場地 7 個目標點依序走完，全部用 Gazebo 真實位置評分。「控制器回報完成」代表 Nav2 或 RL 認為已到達；
+「真值到達」是實際離目標 0.35 m 內。每段限時 `corridor` 240 s、其他 150 s。**以下都是單次執行，是目前的起點，不是成果。**
 
-**目前的模型（官方 S1 URDF，本體 875 g + LiDAR 45 g），`project3` 場地**（2026-10-10）
-
-| 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 最小離障距離 | 成功段平均用時 | 翻倒 | CSV |
+| 場地 | 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 翻倒 | 說明 | CSV |
 |---|---|---|---|---|---|---|---|
-| **RL（PPO v6，預設權重）** | **7/7** | **7/7** | 0 | 0.13 m | 80.2 s | 否 | `results/benchmarks/bench_s1_875g_rl_v6.csv` |
-| RL（PPO v6）第二次執行 | 7/7 | 7/7 | 0 | 0.13 m | 79.1 s | 否 | `results/benchmarks/bench_s1_875g_rl_v6_r2.csv` |
-| RL（PPO v5，625 g 時訓練的舊權重） | 7/7 | 7/7 | 0 | 0.13 m | 85.1 s | 否 | `results/benchmarks/bench_s1_875g_rl_v5.csv` |
-| Nav2 RPP | 3/7 | 1/7 | 3 | 0.09 m | 98.4 s | 否 | `results/benchmarks/bench_s1_875g_rpp.csv` |
-| Nav2 DWB | 1/7 | 0/7 | 6 | 0.11 m | — | 否 | `results/benchmarks/bench_s1_875g_dwb.csv` |
+| `corridor` | RL（基準權重） | 2/7 | 2/7 | 0 | 否 | 走不出第一個房間；到達的 2 段是目標就在起點旁邊的那兩段 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
+| `clutter` | RL（基準權重） | 1/7 | 1/7 | 0 | 否 | 卡在柱子之間；到達的 1 段是不用穿過柱子的那一段 | `results/benchmarks/bench_clutter_rl_baseline.csv` |
+| `corridor` | Nav2 RPP | 1/7 | 0/7 | 0 | 否 | 第 1 段走了 142 s 後放棄，之後各段很快就放棄；SLAM 誤差 1.2–1.6 m | `results/benchmarks/bench_corridor_rpp.csv` |
+| `project3` | Nav2 RPP | 3/7 | 1/7 | 3 | 否 | 走走停停，SLAM 誤差累積到 1 m 以上 | `results/benchmarks/bench_s1_875g_rpp.csv` |
+| `project3` | Nav2 DWB | 1/7 | 0/7 | 6 | 否 | 同上 | `results/benchmarks/bench_s1_875g_dwb.csv` |
 
-- RL 7 段全部到達、沒有擦碰也沒有翻倒；第 1 段就是投影片上的任務（從起點繞過障礙物走到右上角目標），用時 117 s。
-  SLAM 誤差全程在 0.06–0.13 m（RL 走得平順，沒有原地打轉）。
-- 同一份 v5 權重在 625 g 的舊模型上是 3/7 且翻倒（下表）：改善主要來自模型本身變穩（重量、LiDAR 位置與關節增益調整後，邊走邊轉不再翻倒），不是策略變了。
-- Nav2 的 RPP / DWB 沒有為新重量重調，表現與之前差不多（走得慢、SLAM 誤差累積到 1 m 以上）。
-- RL v6 跑了兩次（結果相同），其他各為**單次執行**。第二次執行同時錄了真值路徑（`results/benchmarks/path_s1_875g_rl_v6_r2.csv`，
-  用 `tools/path_record.py` 錄、`tools/plot_path.py` 畫，簡報「主任務成果」的圖就是它的第 1 段）。RL 節點與評分用的位姿是 Gazebo 真值，實機要換成 SLAM 定位（見「已知限制」）。
+基準權重在 2D 訓練環境裡的到達率（`results/training/baseline_eval_2d.txt`，每個場地 200–210 段）：
+`corridor` 0%、`clutter` 1%、`project3` 21%、`obstacle_test` 5%、隨機場景 26%，幾乎都是逾時（卡住不動或原地打轉），很少碰撞（有安全保護）。
 
-**625 g 時期（官方 URDF 原始質量），`project3` 場地**（2026-10-02）
-
-| 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 最小離障距離 | 翻倒 | CSV |
-|---|---|---|---|---|---|---|
-| Nav2 DWB | 4/7 | 0/7 | 1 | 0.12 m | 否 | `results/benchmarks/bench_s1off_dwb.csv` |
-| Nav2 RPP | 3/7 | 1/7 | 9 | 0.07 m | 否 | `results/benchmarks/bench_s1off_rpp.csv` |
-| RL (PPO，官方模型版) | 3/7 | 3/7 | 34 | 0.04 m | 是（第 7 段） | `results/benchmarks/bench_s1off_rl.csv` |
-
-- RPP 第 1 段（就是投影片上的任務：從起點繞過障礙物走到右上角目標）成功到達，誤差 0.04 m、用時 124 s。
-- DWB 在加運動安全濾波之前會翻倒（第 1 段就翻）；加上之後沒有再翻。
-- 主要問題：S1 走得慢（約 0.13 m/s，轉彎時更慢），project3 場地較大、通道較窄，長的路段常在 150 s 內走不完；
-  後段 SLAM 誤差會累積到 1–1.7 m（RPP），真值到達率因此偏低。RL 在窄通道裡擦碰很多，還需要針對窄通道訓練。
-- 「控制器回報完成」與「真值到達」差距大的段落，多半是 SLAM 定位誤差（`slam_err_m` 欄位）。
-
-**手工 S1 方塊模型（`model:=s1_box`），舊的 `obstacle_test` 場地**
-
-| 控制器 | 控制器回報完成 | 真值到達 | 碰撞 | 最小離障距離 | 翻倒 | CSV |
-|---|---|---|---|---|---|---|
-| Nav2 DWB | 6/7 | 2/7 | 0 | 0.22 m | 否 | `results/benchmarks/bench_s1v2_dwb.csv` |
-| Nav2 RPP | 6/7 | 4/7 | 0 | 0.15 m | 否 | `results/benchmarks/bench_s1v2_rpp.csv` |
-| RL (PPO, S1 版) | 4/7 | 4/7 | 2（擦碰） | 0.08 m | 否 | `results/benchmarks/bench_s1v2_rl.csv` |
-
-**舊的 CHAMP 放大模型（`model:=champ`，對照用）**
-
-| 控制器 | 真值到達 | 碰撞 | 最小離障距離 | CSV |
-|---|---|---|---|---|
-| Nav2 DWB | 7/7 | 0 | 0.34 m | `results/benchmarks/bench_dwb_v2.csv` |
-| Nav2 RPP | 4/7 | 0 | 0.29 m | `results/benchmarks/bench_rpp_v2.csv` |
-| RL (PPO, 舊版) | 5/7 | 0 | 0.19 m | `results/benchmarks/bench_rl_v3.csv` |
-
-重跑 benchmark：`tools/bench_all.sh <前綴> dwb rpp rl`（依序啟動無頭模擬並跑完，約 40 分鐘）。
+重跑：`WORLD=corridor tools/bench_all.sh <前綴> rl rpp dwb`（依序啟動無頭模擬並跑完；`corridor` 每個控制器最多約 30 分鐘）。
+`tools/path_record.py` 可以同時錄下真值路徑，`tools/plot_scene.py <場地> 圖.png 路徑.csv` 把路徑畫在場地上。
 
 ## RL 避障控制器
 
@@ -337,44 +298,44 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
   （RL 模式下不開 Nav2 的 controller_server，避免兩邊搶 `/cmd_vel`）
 - 部署推理只用 numpy（`rl_policy.py`），Raspberry Pi 上不需要裝 PyTorch
 
-**目前的預設權重（v6，`rl/models/policy.npz` = `rl/models/s1_v6_finetune/best/`）** 是針對 920 g 模型訓練的：
+**目前附的權重（`rl/models/policy.npz`、`ppo_nav.zip`）只是一份基準**：在 2D 環境從零訓練 10 萬步（約 2 分鐘）的結果，
+會動、會被安全保護擋住不撞牆，但常常卡在牆邊、門口前或原地打轉，走不到目標。**把避障做好是接下來的工作。**
 
-- 訓練環境 `rl/nav_env.py` 是純 Python 的 2D 光達環境（隨機場地：零散障礙物、長牆、U 形陷阱、走廊），用 PPO 訓練（只用 CPU）。
-- 機器狗在 2D 環境裡怎麼動，用的是 Gazebo 實測的速度反應（`rl_policy.speed_model_875g`，資料在 `results/speed_response_s1_875g_run*.txt`）：
-  指令低於約 0.06 m/s 不會前進、0.15 m/s 實際約 0.084 m/s、運動安全濾波的轉彎降速。
-- **訓練經過**（三次嘗試都留有紀錄，接手的人可以少走冤枉路）：
-  1. 速度上限 0.20 m/s、從零訓練 4M 步：2D 評估很好（投影片場地 100%），但放進 Gazebo 走完前 2 段後，在障礙物旁反覆「停—衝」時翻倒
-     （`results/training/flip_v6_vmax020.txt`）。起停壓力測試確認 0.20 m/s 急起急停時傾斜達 57–60°，0.15 m/s 最大只有 10°
-     （`tools/startstop_test.py`，`results/startstop_test_875g.txt`），所以上限維持 0.15 m/s。
-  2. 上限 0.15 m/s、從零訓練 4M 步：只到 70–87%，比舊的 v5 權重（625 g 時訓練）差（`rl/models/s1_v6_scratch/`，`results/training/eval_compare_v6_scratch.txt`）。
-  3. **以 v5 權重為起點、在 920 g 的速度模型上接續訓練 2M 步**（`train.py --init=...`，約 26 分鐘）：採用這一版。
-- 速度模型另有一個含「原地轉時以 0.05 m/s 後退」的版本（`s1_v6_finetune_creep/`），2D 評估略高但沒有在 Gazebo 實測。
+### 待完成的工作（只需要模擬）
 
-| 2D 環境評估（`results/training/eval_compare_v6.txt`，都用 920 g 的速度模型） | v6（採用） | v6 含後退版 | v6 從零訓練 | v5（625 g 時訓練） | 追路徑點（傳統基準） |
-|---|---|---|---|---|---|
-| 舊測試場地 210 段 | 90% 到達、0 碰撞、平均 52.2 s | 94%、1、51.6 s | 70%、0、58.4 s | 90%、0、53.3 s | 63%、77 次碰撞 |
-| 投影片場地 project3 210 段（訓練沒看過） | 99%、0 碰撞、69.9 s | 100%、0、68.7 s | 87%、0、70.6 s | 100%、0、70.1 s | 52%、100 次碰撞 |
-| 隨機新場景 200 個 | 88%、3 碰撞、43.7 s | 90%、3、43.4 s | 78%、3、44.6 s | 89%、3、44.0 s | 64%、73 次碰撞 |
+目標：在 `corridor` 與 `clutter` 兩個場地，Gazebo benchmark 7 段都真值到達、沒有擦碰、沒有翻倒，而且重跑幾次結果一致。
 
-在 2D 環境裡 v6 與 v5 差不多（差異在雜訊範圍內）；放進 Gazebo 兩者都是 7/7，v6 平均每段快約 5 秒（見上方「Benchmark 結果」）。
-訓練曲線：`results/training/ppo_metrics_v6.png`。
+1. **先把基準跑起來看**：`./run.sh sim rl` 後在 RViz 點目標，看它卡在哪裡；`./run.sh bench <名稱> rl` 跑一次評測。
+2. **訓練出能用的策略**（`SETUP.md` 第 6 節有完整步驟）：訓練久一點（幾百萬步）、看 `eval.csv` 的到達率曲線。
+   2D 環境的隨機場景目前沒有 0.6 m 的窄門口和密集柱子，可以在 `rl/nav_env.py` 的 `_random_layout` 加進去，或直接把 `rl/scenes.py` 的場地混進訓練。
+3. **調整獎勵與觀測**：獎勵在 `rl/nav_env.py` 的 `step`（進度、碰撞、到達、太靠近障礙物、安全保護介入）。
+   安全保護的安全距離 `rl/safety_shield.py` 的 `SAFE_DIST` 是 0.22 m，0.6 m 的門口兩邊各只剩 0.08 m 的餘量，策略要學會對準了再過。
+4. **放進 Gazebo 驗證**：2D 環境裡表現好不代表 Gazebo 裡好（機身會晃、SLAM 有誤差、會翻倒），每次都要跑 benchmark。
+5. **比較與紀錄**：`rl/eval_compare.py` 可以把新舊權重放在同樣的場景比較；結果放 `results/`，在 `results/README.md` 補一行說明。
 
-**接手的人可以從這裡繼續改善**：
-- 獎勵與場景生成在 `rl/nav_env.py`（檔頭有 v1–v6 每一版改了什麼、為什麼），訓練參數在 `rl/train.py`，
-  重新訓練、評估、放進 Gazebo 測試的步驟在 `SETUP.md` 第 6 節。
-- 走得慢的主因是運動安全濾波（`launch/cmd_vel_safety.py`）的轉彎降速：它是 625 g 時「邊走邊轉會翻倒」而加的，
-  920 g 下步態本身邊走邊轉已不會減速也沒翻倒（直接送 0.15 m/s + 0.5 rad/s 仍有 0.08 m/s、傾斜 5°）。
-  放寬 `min_scale` / `w_full_stop`、重新量測速度反應後再訓練，有機會明顯變快（需要先用 `tools/startstop_test.py` 之類的測試確認不會翻倒）；這次沒有動它。
-- Gazebo 的結果只有兩次執行，而且場地只有 project3 一個；要確認穩定性需要多跑幾次、換場地。
+### 之前幾輪訓練留下的經驗
 
-模擬只需要 `models/policy.npz`（已附上），**不用另外裝任何東西**。要重新訓練時，在主機上建 Python 環境（Python 3.10 以上）：
+- **速度指令上限維持 0.15 m/s**：穩定走 0.2 m/s 沒問題，但 0.2 m/s 的急起急停會翻倒（`tools/startstop_test.py`，`results/startstop_test_875g.txt`：
+  0.20 時傾斜達 57–60°，0.15 時最大 10°）。2D 環境裡不會翻倒，所以上限 0.20 的策略在 2D 評估很好，放進 Gazebo 卻在障礙物旁「停—衝」幾次後翻倒。
+- **2D 環境的速度模型要照 Gazebo 實測**（`rl_policy.speed_model_875g`，資料在 `results/speed_response_s1_875g_run*.txt`）：
+  指令低於約 0.06 m/s 不會前進、0.15 m/s 實際約 0.084 m/s、轉彎時會被運動安全濾波降速。改了機器狗模型或濾波器，就要重量、重新擬合。
+- **走得慢的主因是運動安全濾波**（`launch/cmd_vel_safety.py`）的轉彎降速：它是模型還是 625 g 時加的；920 g 下步態本身邊走邊轉已不會減速也沒翻倒
+  （直接送 0.15 m/s + 0.5 rad/s 仍有 0.08 m/s、傾斜 5°）。放寬 `min_scale` / `w_full_stop`、重新量測速度反應後再訓練，有機會明顯變快，但要先確認不會翻倒。
+- **「轉向抖動扣分」試過沒用**：策略學會站著不動來避免被扣分。
+- **接續訓練比從零快**：`train.py --init=<舊的 ppo_nav.zip>` 會以舊權重為起點、學習率降為 1e-4。
+- **Gazebo 的量測雜訊很大**：同一組設定重跑，結果可能差很多，下結論前至少跑兩次。
+
+### 訓練環境
+
+跑模擬只需要 `models/policy.npz`（已附上），不用另外裝任何東西。要訓練時，在主機上建 Python 環境（Python 3.10 以上）：
 
 ```bash
 cd sim_env/rl
 python3 -m venv .venv
 env -u PYTHONPATH .venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
-env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓練 4M 步 (約 45 分鐘), 存到 models/my_run/
-env -u PYTHONPATH .venv/bin/python eval_compare.py "目前=models/policy.npz" "新=models/my_run/best/policy.npz"   # 與目前的權重比較
+env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓練 4M 步 (約 45~70 分鐘), 存到 models/my_run/
+env -u PYTHONPATH .venv/bin/python eval_compare.py "基準=models/policy.npz" "新=models/my_run/best/policy.npz"   # 與基準比較 (含 corridor / clutter)
+./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz             # (在 sim_env/ 下) 放進 Gazebo
 ```
 
 > `env -u PYTHONPATH`：避免主機的 PYTHONPATH（例如指向 ROS 或其他 Python 版本的 dist-packages）讓 venv 載入到錯誤版本的套件。
@@ -402,7 +363,9 @@ env -u PYTHONPATH .venv/bin/python eval_compare.py "目前=models/policy.npz" "�
 | `tune_sweep.sh` | 在主機執行：質量 / LiDAR 位置 / 關節增益 / 站姿掃描（`P=14,LX=-0.06` 這種寫法，每組重產模型並重啟模擬） |
 | `com_check.py` | 在主機執行：站姿下的整機質心與四腳支撐中心（靜態計算，不需要 Gazebo） |
 | `startstop_test.py <V>` | 前進指令在 0 與 V 之間來回（急起急停）時的最大傾斜 |
-| `path_record.py` / `plot_path.py` / `plot_lidar_positions.py` / `render_model.py` | 錄真值路徑、畫路徑圖、畫 LiDAR 位置示意圖、算繪模型外觀圖（簡報用的圖；後三個在主機執行） |
+| `make_world.py` / `plot_scene.py` | 在主機執行：依 `rl/scenes.py` 產生 Gazebo 場地檔 / 畫場地圖（可疊上錄到的路徑） |
+| `path_record.py` | 錄真值路徑（CSV） |
+| `plot_lidar_positions.py` / `render_model.py` | 在主機執行：畫 LiDAR 位置示意圖、算繪模型外觀圖（簡報用的圖） |
 | `gain_sweep.sh` / `gait_sweep.sh` / `bench_all.sh` | 在主機執行：關節增益與步態掃描（官方模型）/ 步態掃描（方塊模型）/ 三種控制器依序 benchmark |
 
 ## 已知限制
@@ -413,6 +376,7 @@ env -u PYTHONPATH .venv/bin/python eval_compare.py "目前=models/policy.npz" "�
 - **靜止站立時機身會以約 1 cm/s 慢慢往後滑**（`tools/stand_drift.py`；625 g 時期就有，`results/sweeps/gain_sweep_pid.txt` 的 drift 欄）。
   與關節 PID 的微幅顫振有關（d 增益 0.03 時不會滑，但走路會晃）。導航中有閉迴路修正所以不明顯，但到達目標後停著不動會慢慢離開目標點，
   啟動後不下目標放著也會退到後方的牆邊。原地轉向時以約 5 cm/s 後退也是同一類現象，RL 的速度模型有把它算進去。
+- **強化學習避障還沒做好**：附的只是訓練 10 萬步的基準權重（見「RL 避障控制器」）。
 - RL 訓練環境假設 LiDAR 在機身中心；實際在中心後方 6 cm，所以機身前方的障礙物實際上比 RL 以為的近 6 cm（碰撞判定距離 0.16 m 有留餘量）。
 - 啟動時 `gazebo_ros2_control: Parameter 'hold_joints' has already been declared` 的 ERROR 是 12 個獨立
   ros2_control 區塊造成的無害訊息，不影響控制。

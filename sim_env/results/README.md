@@ -8,12 +8,12 @@
 
 | 檔案 | 機器狗模型 | 場地 | 階段 |
 |---|---|---|---|
-| `bench_s1_875g_rl_v6.csv` / `_rl_v5` / `_rpp` / `_dwb` | **官方 S1 URDF，實機重量**（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | project3 | **最新**（2026-10-10）。`rl_v6` 是預設權重（`_r2` 是第二次執行，`path_s1_875g_rl_v6_r2.csv` 是該次的真值路徑），`rl_v5` 是 625 g 時訓練的舊權重 |
-| `bench_s1off_dwb.csv` / `_rpp` / `_rl` | 官方 S1 URDF，官方質量 625 g | project3 | 2026-10-02，含運動安全濾波 |
-| `bench_s1v2_dwb.csv` / `_rpp` / `_rl` | 手工方塊模型（`model:=s1_box`） | obstacle_test | 調整後（2026-09-24） |
-| `bench_s1_dwb.csv` / `_rpp` / `_rl` | 手工方塊模型 | obstacle_test | 第一輪（2026-09-24） |
-| `bench_dwb_v2.csv` / `bench_rpp_v2.csv` / `bench_rl_v3.csv` | 舊的 CHAMP 放大模型（`model:=champ`） | obstacle_test | 修正 Gazebo 崩潰、里程計、地面點之後（2026-09-23） |
-| `bench_dwb.csv` / `bench_rpp.csv` / `bench_rl.csv` / `bench_rl_v2.csv` | 舊的 CHAMP 放大模型 | obstacle_test | 修正前（2026-09-21～22） |
+| `bench_corridor_rl_baseline.csv` / `bench_clutter_rl_baseline.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor / clutter | **目前的起點**：RL 基準權重（訓練 10 萬步） |
+| `path_corridor_rl_baseline.csv` / `path_clutter_rl_baseline.csv` | 同上 | corridor / clutter | 上面兩次執行的真值路徑（`tools/path_record.py`；`tools/plot_scene.py` 可畫出來） |
+| `bench_corridor_rpp.csv` | 同上 | corridor | Nav2 RPP |
+| `bench_s1_875g_rpp.csv` / `_dwb` | 同上 | project3 | Nav2 RPP / DWB |
+
+較早期（625 g 模型、方塊模型、放大模型）的 benchmark 與所有舊的 RL 權重、訓練紀錄已於 2026-10-10 移除。
 
 欄位：
 
@@ -46,19 +46,12 @@
 ## speed_response_*.txt、startstop_test_875g.txt — 速度反應與起停測試
 
 `tools/speed_response.py` 的輸出：各種速度指令下的實際前進 / 轉向速度與最大傾斜。`speed_response_s1.txt`、`_run2` 是 625 g 時期，
-`speed_response_s1_875g_run1.txt`、`_run2` 是目前的 920 g 模型（RL v6 的速度模型依此擬合）。
+`speed_response_s1_875g_run1.txt`、`_run2` 是目前的 920 g 模型（RL 訓練環境的速度模型依此擬合）。
 `startstop_test_875g.txt` 是 `tools/startstop_test.py` 的輸出：前進指令在 0 與 0.15 / 0.20 m/s 間來回時的最大傾斜（各 2 次啟動）。
 
 ## training/ — RL 訓練紀錄
 
 | 檔案 | 內容 |
 |---|---|
-| `train_s1_v6_finetune_2M.log` | **目前使用的策略（v6）**：以 v5 權重為起點，在 920 g 模型的實測速度模型上接續訓練 2M 步（權重在 `rl/models/s1_v6_finetune/best/`） |
-| `train_s1_v6_finetune_creep_2M.log` | v6 的對照版：速度模型多了「原地轉會後退」（權重在 `rl/models/s1_v6_finetune_creep/`，沒有在 Gazebo 實測） |
-| `train_s1_v6_scratch_nocreep_4M.log` / `_creep_4M.log` | 920 g 速度模型從零訓練 4M 步（上限 0.15 m/s）：比 v5 差，沒有採用（權重在 `rl/models/s1_v6_scratch/`） |
-| `eval_compare_v6.txt` / `eval_compare_v6_scratch.txt` | 2D 環境比較（都用 920 g 的速度模型）：微調版、從零版、v5 舊權重、追路徑點基準 |
-| `flip_v6_vmax020.txt` | 速度上限 0.20 m/s 的版本在 Gazebo 翻倒前 6 秒的紀錄（因此上限維持 0.15 m/s；該版權重沒有保留） |
-| `ppo_metrics_v6.png` | v6 微調的訓練曲線（loss、回報、到達率） |
-| `train_s1_official_4M.log` | 625 g 時期的策略：官方 S1 模型，4M 步；檔尾是固定場地的離線評估（92% 到達）。權重在 `rl/models/s1_logged/` |
-| `train_s1_official.log` | 官方 S1 模型，2M 步（離線評估 42%，權重在 `rl/models/s1_official_2M/`） |
-| `train_s1.log` | 手工方塊模型版（權重在 `rl/models/s1_box/`） |
+| `baseline_100k_eval.csv` | 基準權重訓練時的評估（10 萬步，200 個固定場景到達 63 個） |
+| `baseline_eval_2d.txt` | 基準權重與「追路徑點」傳統基準在 2D 環境各場地的到達率（`rl/eval_compare.py` 的輸出） |

@@ -116,16 +116,17 @@ docker exec dogzilla-sim bash -lc 'source /opt/ros/humble/setup.bash;
 
 1. 在 RViz 上方工具列點 **2D Goal Pose**
 2. 在地圖上點一下（按住拖曳可以設定朝向）
-3. 機器狗會自己規劃路徑、繞過障礙物走過去。右上角的綠色柱子是投影片的目標點
+3. 機器狗會自己規劃路徑往目標走。預設場地是窄通道加死巷（`corridor`），綠色柱子是第 1 個測試目標。
+   注意：`./run.sh sim` 用的是 Nav2 的 DWB 控制器；強化學習（`./run.sh sim rl`）目前只附基準權重，常會卡住，這是待完成的工作
 
 ### 5.4 其他啟動方式
 
 ```bash
 ./run.sh sim rpp                                       # 改用 Nav2 Regulated Pure Pursuit 控制器
-./run.sh sim rl                                        # 改用強化學習避障 (預設權重 rl/models/policy.npz)
-./run.sh sim rl rl_policy:=/rl/models/s1_v2/policy.npz # 強化學習, 指定其他權重
+./run.sh sim rl                                        # 改用強化學習避障 (預設權重 rl/models/policy.npz, 目前是基準權重)
+./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz   # 強化學習, 指定自己訓練的權重
 ./run.sh sim dwb gui:=false rviz:=false                # 無頭模式 (沒有桌面、或跑長時間測試時用)
-./run.sh sim dwb world:=/worlds/obstacle_test.world    # 舊的 6 m x 6 m 場地
+./run.sh sim rl world:=/worlds/clutter.world           # 換場地: clutter (密集障礙物) / project3 (投影片場景) / obstacle_test
 ```
 
 ### 5.5 停止與其他指令
@@ -161,8 +162,8 @@ env -u PYTHONPATH .venv/bin/pip install -r requirements.txt --extra-index-url ht
 
 ```bash
 env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 從零訓練 400 萬步 (約 45~70 分鐘), 存到 models/my_run/
-# 以現有權重為起點接續訓練 (目前的預設權重 v6 就是這樣從 v5 訓練出來的, 200 萬步約 26 分鐘):
-env -u PYTHONPATH .venv/bin/python train.py 2e6 models/my_run --shield --init=models/s1_v6_finetune/best/ppo_nav.zip
+# 以現有權重為起點接續訓練 (學習率降為 1e-4; 200 萬步約 26 分鐘), 例如從自己上一輪的結果繼續:
+env -u PYTHONPATH .venv/bin/python train.py 2e6 models/my_run2 --shield --init=models/my_run/best/ppo_nav.zip
 ```
 
 | 參數 | 說明 |
@@ -171,8 +172,8 @@ env -u PYTHONPATH .venv/bin/python train.py 2e6 models/my_run --shield --init=mo
 | 第 2 個 | 輸出資料夾，預設 `models`。**不指定會覆蓋部署用的 `models/policy.npz`** |
 | `--shield` | 訓練時加上安全保護（`rl/safety_shield.py`）。權重檔會記錄，部署時自動開啟 |
 
-訓練環境目前（v6）使用 920 g 模型（本體 875 g + LiDAR 45 g）在 Gazebo 實測的速度模型（`rl/rl_policy.py` 的 `speed_model_875g`），動作範圍 0～0.15 m/s（0.20 m/s 急起急停會翻倒，見 `results/startstop_test_875g.txt`）。
-速度模型與動作範圍都會寫進權重檔，部署節點會照著用，所以舊權重（v1～v3）仍照原本的設定執行。
+訓練環境使用 920 g 模型（本體 875 g + LiDAR 45 g）在 Gazebo 實測的速度模型（`rl/rl_policy.py` 的 `speed_model_875g`），動作範圍 0～0.15 m/s（0.20 m/s 急起急停會翻倒，見 `results/startstop_test_875g.txt`）。
+速度模型與動作範圍都會寫進權重檔，部署節點會照著用。
 
 輸出資料夾裡會有：
 
@@ -187,10 +188,9 @@ env -u PYTHONPATH .venv/bin/python train.py 2e6 models/my_run --shield --init=mo
 ### 6.3 評估與畫圖
 
 ```bash
-# 在 2D 環境比較多個模型 (舊測試場地、投影片場地、隨機場景各一組)
-env -u PYTHONPATH .venv/bin/python eval_compare.py "v1=models/policy.npz" "新=models/my_run/best/policy.npz"
-# 路徑後面可加 +shield (強制開安全保護)、+measured (改用 625 g 時期的實測速度模型)、+875g (改用目前 920 g 的實測速度模型)
-# 例如 "v5=models/s1_v5_measured/best/policy.npz+875g"
+# 在 2D 環境比較多個模型 (obstacle_test、project3、隨機場景、corridor、clutter 各一組; 全部跑完約 10~20 分鐘)
+env -u PYTHONPATH .venv/bin/python eval_compare.py "基準=models/policy.npz" "新=models/my_run/best/policy.npz"
+# 路徑後面可加 +shield (強制開安全保護)、+875g (速度模型加上「原地轉時慢慢後退」, 較接近 Gazebo)
 
 # 畫訓練曲線 (用模擬映像裡的 matplotlib, 主機不用另外安裝)
 cd ..
@@ -203,8 +203,12 @@ docker run --rm -v "$PWD":/w -v /usr/share/fonts/opentype/noto:/fonts:ro -w /w d
 ### 6.4 放進 Gazebo 測試
 
 ```bash
-./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz
-./run.sh bench my_run rl
+./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz    # 預設場地 corridor
+./run.sh bench my_run rl                                        # 7 個目標點, 結果存 logs/bench_my_run.csv
+
+./run.sh stop
+./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz world:=/worlds/clutter.world
+./run.sh bench my_run_clutter rl clutter
 ```
 
 部署節點（`rl/rl_controller.py`）可用的啟動參數：
@@ -218,7 +222,8 @@ docker run --rm -v "$PWD":/w -v /usr/share/fonts/opentype/noto:/fonts:ro -w /w d
 部署節點每 2 秒向 Nav2 重新規劃一次路徑，並發佈 `/rl_intent`（安全保護之前 RL 想要的速度），方便診斷。
 S1 在 Gazebo 的實際速度反應可以用 `tools/speed_response.py` 量測（需以空場地啟動，見檔頭說明）。
 
-確認比較好之後，再把 `policy.npz` 複製到 `rl/models/policy.npz` 成為預設權重（建議先備份舊的）。
+確認比基準好之後，再把 `policy.npz` 與 `ppo_nav.zip` 複製到 `rl/models/` 成為預設權重（建議先備份舊的）。
+目前的基準在 Gazebo 的成績見 `README.md` 的「Benchmark 結果（基準）」。
 
 ---
 
@@ -244,6 +249,6 @@ S1 在 Gazebo 的實際速度反應可以用 `tools/speed_response.py` 量測（
 - [ ] `docker images dogzilla-sim` 看得到 `humble` 映像
 - [ ] `vendor/Program/yahboomcar_ws_ros2/install/` 裡有 `champ` 等資料夾
 - [ ] `./run.sh sim` 後，`logs/sim.log` 有 `active 控制器數 = 2` 與 `Nav2 active`
-- [ ] 在 RViz 用 2D Goal Pose 下目標，機器狗會走過去
+- [ ] 在 RViz 用 2D Goal Pose 下目標，機器狗會開始往目標走（預設場地較難，不一定走得到）
 - [ ] `./run.sh stop` 能正常停止
 - [ ] （選用）`rl/.venv` 建好，`eval_compare.py` 能跑出結果

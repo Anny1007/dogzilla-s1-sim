@@ -15,6 +15,7 @@ DOGZILLA/
 ├── docs/                     專案文件
 │   ├── project.pptx          專案投影片（目標、硬體、系統架構）
 │   ├── architecture.svg      軟體架構圖
+│   ├── scene_corridor.png, scene_clutter.png   測試場地圖（含基準權重走過的路徑）
 │   ├── DOGZILLA_專案簡報.pptx  成果報告簡報（13 頁，含講者備註；另附 .pdf 版；2026-10-10 更新）
 │   └── 專案說明.md           給新成員 / 對外說明用的介紹
 ├── sim_env/                  模擬環境（本專案開發的部分）
@@ -25,7 +26,7 @@ DOGZILLA/
 │   ├── launch/               一鍵啟動檔、LiDAR 地面點過濾、運動安全濾波、RViz 設定
 │   ├── description/          機器狗模型（由官方 URDF 自動產生）
 │   ├── config/               步態、關節控制器、SLAM 設定
-│   ├── worlds/               模擬場地（project3 = 投影片第 1 頁場景）
+│   ├── worlds/               模擬場地（預設 corridor = 窄通道 + 死巷；另有 clutter、project3 = 投影片第 1 頁場景）
 │   ├── rl/                   強化學習避障（訓練程式與已訓練好的權重）
 │   ├── tools/                診斷與測試工具
 │   ├── results/              已記錄的測試結果（有索引說明）
@@ -51,7 +52,7 @@ cd sim_env
 ./run.sh stop       # 停止
 ```
 
-詳細步驟、驗證方法與常見問題見 `sim_env/SETUP.md`；其他模式（強化學習避障、RPP、舊場地、benchmark）見 `sim_env/README.md`。
+詳細步驟、驗證方法與常見問題見 `sim_env/SETUP.md`；其他模式（強化學習避障、RPP、換場地、benchmark）見 `sim_env/README.md`。
 
 ## 目前狀態（2026-10）
 
@@ -61,12 +62,12 @@ cd sim_env
 | 機器狗模型 | 使用 Yahboom 官方 DOGZILLA S1 URDF（為模擬做的修正都有記錄）；重量為實機秤重：本體 875 g + 加裝的 DOGZILLA S2 LiDAR 45 g |
 | LiDAR 安裝位置 | 機身中線、比官方位置再往後 4.3 cm（`x = −0.06 m`）：模擬比較 8 個前後位置後，對行走平衡影響最小的位置 |
 | 走路晃動 | 920 g 下前進時機身晃動 RMS 約 2.5°、最大傾斜約 5°（依新重量重調過關節增益） |
-| 投影片主要任務（繞過障礙物走到右上角目標） | 模擬中完成（強化學習避障，約 2 分鐘走到，沒有碰撞） |
-| 連續 7 個目標點的到達率 | 強化學習 7/7、0 碰撞（跑兩次結果相同）；傳統方法 Nav2 RPP 1/7、DWB 0/7 |
-| 強化學習避障 | 已訓練出一版可用的策略（PPO，`sim_env/rl/`）；走得慢（約 0.08 m/s）、只在一個場地驗證過，後續改善方向寫在 `sim_env/README.md` 的「RL 避障控制器」 |
+| 測試場地 | 預設是比投影片場景更難的 `corridor`（蛇行窄通道、0.6 m 門口、死巷），另有 `clutter`（密集柱子）；投影片場景 `project3` 仍保留 |
+| 連續 7 個目標點的到達率（基準） | `corridor`：RL 基準權重 2/7、Nav2 RPP 0/7；`clutter`：RL 基準權重 1/7。都沒有擦碰或翻倒，但卡住走不到（各為單次執行） |
+| **強化學習避障** | **待完成**。訓練與部署的程式都在（PPO，`sim_env/rl/`），目前只附一份訓練 10 萬步的基準權重，常卡在牆邊或門口前。要做的事寫在 `sim_env/README.md` 的「RL 避障控制器 → 待完成的工作」，只需要模擬 |
 | 實機部署 | 尚未進行 |
 
-詳細數字與分析見 `sim_env/README.md` 的「Benchmark 結果」與 `sim_env/results/README.md`。
+詳細數字與分析見 `sim_env/README.md` 的「Benchmark 結果（基準）」與 `sim_env/results/README.md`。
 
 ## 交付說明
 

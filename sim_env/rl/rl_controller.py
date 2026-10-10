@@ -47,7 +47,7 @@ class RLController(Node):
     def __init__(self):
         super().__init__('rl_controller')
         self.set_parameters([rclpy.parameter.Parameter('use_sim_time', rclpy.Parameter.Type.BOOL, True)])
-        # 权重档可用 ROS 参数指定 (launch: rl_policy:=/rl/models/s1_v2/policy.npz), 默认是部署用的 models/policy.npz
+        # 权重档可用 ROS 参数指定 (launch: rl_policy:=/rl/models/my_run/best/policy.npz), 默认是部署用的 models/policy.npz
         path = self.declare_parameter('policy', '/rl/models/policy.npz').value
         self.policy = Policy(path)
         # 安全保护 (safety_shield.py): auto = 依权重档 (训练时有开就开), on / off = 强制

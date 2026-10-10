@@ -1,8 +1,0 @@
-label,leg,goal,status,success,time_s,path_m,final_err_m,min_clearance_m,collisions,slam_err_m,flipped
-s1_rpp,1,"(2.2,0.0)",ABORTED,0,31.6,2.61,0.81,0.31,0,0.1,0
-s1_rpp,2,"(-2.0,0.3)",ABORTED,0,44.0,2.52,2.76,0.16,0,0.02,0
-s1_rpp,3,"(2.2,-1.8)",ABORTED,0,33.7,0.69,1.87,0.16,0,0.05,0
-s1_rpp,4,"(-2.0,-2.0)",ABORTED,0,117.7,10.67,0.47,0.16,0,0.26,0
-s1_rpp,5,"(2.2,1.8)",SUCCEEDED,0,50.1,7.27,0.35,0.39,0,0.22,0
-s1_rpp,6,"(-1.8,1.8)",SUCCEEDED,1,40.6,5.48,0.06,0.48,0,0.12,0
-s1_rpp,7,"(0.0,0.0)",SUCCEEDED,1,36.3,4.48,0.24,0.47,0,0.05,0

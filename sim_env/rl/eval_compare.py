@@ -1,13 +1,13 @@
 """在 2D 环境比较多个策略 (部署方式: 沿全局路径的瞄准点):
-    python eval_compare.py [名称=权重.npz[+shield] ...]      默认比较 models/policy.npz 与 models/s1_v2/policy.npz
+    python eval_compare.py [名称=权重.npz[+shield] ...]      默认只评估 models/policy.npz (基准权重)
 权重档训练时有安全保护会自动开启; 在路径后面加 +shield 可以强制开启 (例如测试旧模型 + 安全保护),
-加 +measured 改用 625 g 时期的 Gazebo 实测速度模型 (例如 models/s1_v3_shield/best/policy.npz+measured),
-加 +875g 改用目前 920 g 模型的实测速度模型 (看旧权重在新重量下的表现)。
+加 +875g 改用含「原地转时慢慢后退」的速度模型评估 (较接近 Gazebo), 例如 "新=models/my_run/best/policy.npz+875g"。
 
-三组场景:
+场景:
   旧测试场地   worlds/obstacle_test.world, 7 段 x 30 轮
   投影片场地   worlds/project3.world (训练时从未见过), 与 benchmark_nav.py 相同的 7 段 x 30 轮
   随机新场景   v2 训练分布, 200 个训练评估没用过的种子
+  corridor / clutter   rl/scenes.py 的两个复杂场地 (Gazebo 预设场地), 7 段 x 30 轮
 另附「追路径点」传统控制当基准: 朝瞄准点转向, 偏太多就原地转。
 """
 import math
@@ -17,6 +17,7 @@ import numpy as np
 
 from nav_env import DT, NavEnv, PROJECT3, PROJECT3_WALLS, SPEED_MODEL, TEST_WORLD, V_CMD_MAX, WALLS
 from rl_policy import Policy
+from scenes import SCENES
 
 OLD_GOALS = [(2.2, 0.0), (-2.0, 0.3), (2.2, -1.8), (-2.0, -2.0), (2.2, 1.8), (-1.8, 1.8), (0.0, 0.0)]
 P3_GOALS = [(5.9, 1.1), (0.0, 0.0), (5.6, -1.5), (0.3, 1.5), (3.1, 0.6), (1.5, -1.5), (5.9, 1.1)]
@@ -65,7 +66,7 @@ def summary(res):
 
 
 if __name__ == '__main__':
-    specs = sys.argv[1:] or ['旧(v1)=models/policy.npz', '新(v2)=models/s1_v2/policy.npz']
+    specs = sys.argv[1:] or ['基准=models/policy.npz']
     pols = []
     for spec in specs:
         name, path = spec.split('=')
@@ -80,7 +81,9 @@ if __name__ == '__main__':
     pols.append(('追路径点', PurePursuit()))
     for title, fn in [('旧测试场地 (7 段 x 30 轮)', lambda p: fixed_world(p, TEST_WORLD, WALLS, OLD_GOALS, (0.0, 0.0))),
                       ('投影片场地 project3 (训练没看过, 7 段 x 30 轮)', lambda p: fixed_world(p, PROJECT3, PROJECT3_WALLS, P3_GOALS, (0.0, 0.0))),
-                      ('随机新场景 (200 个)', random_worlds)]:
+                      ('随机新场景 (200 个)', random_worlds)] + [
+                      (f'{k} 场地 (rl/scenes.py, 7 段 x 30 轮)', lambda p, s=s: fixed_world(p, s['obstacles'], s['walls'], s['goals'], (0.0, 0.0)))
+                      for k, s in SCENES.items()]:
         print(f'== {title}')
         for name, p in pols:
             print(f'  {name:8s} {summary(fn(p))}', flush=True)

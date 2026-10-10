@@ -39,8 +39,17 @@ WORLDS = {
             ('cyl', 0.5, -1.0, 0.15), ('box', -1.0, 1.2, 0.6, 0.3), ('cyl', -1.2, -1.0, 0.25),
         ]),
 }
-WORLD = sys.argv[3] if len(sys.argv) > 3 else 'project3'
+# 新增的场地 (corridor 窄通道 + 死巷, clutter 密集障碍物) 定义在 rl/scenes.py, Gazebo 场地档由 tools/make_world.py 产生
+sys.path.insert(0, '/rl')
+try:
+    from scenes import SCENES
+    for _k, _s in SCENES.items():
+        WORLDS[_k] = dict(goals=_s['goals'], obstacles=_s['walls'] + _s['obstacles'], timeout=_s.get('timeout', LEG_TIMEOUT))
+except ImportError:
+    pass
+WORLD = sys.argv[3] if len(sys.argv) > 3 else 'corridor'
 GOALS, OBSTACLES = WORLDS[WORLD]['goals'], WORLDS[WORLD]['obstacles']
+LEG_TIMEOUT = WORLDS[WORLD].get('timeout', LEG_TIMEOUT)     # 每段最长时间依场地 (路线长的场地给久一点)
 
 
 def clearance(x, y):

@@ -158,11 +158,11 @@ def generate_launch_description():
                      condition=IfCondition(rviz))
 
     return LaunchDescription([
-        DeclareLaunchArgument('world', default_value='/worlds/project3.world',
-                              description='/worlds/project3.world (project.pptx 第 1 頁場景, 預設) | /worlds/obstacle_test.world (舊場地)'),
+        DeclareLaunchArgument('world', default_value='/worlds/corridor.world',
+                              description='/worlds/corridor.world (窄通道 + 死巷, 預設) | /worlds/clutter.world (密集障礙物) | /worlds/project3.world (project.pptx 第 1 頁場景) | /worlds/obstacle_test.world (舊場地)'),
         DeclareLaunchArgument('controller', default_value='dwb', description='dwb | rpp | rl'),
         DeclareLaunchArgument('rl_policy', default_value='/rl/models/policy.npz',
-                              description='controller:=rl 時使用的權重檔, 例 /rl/models/s1_v2/policy.npz'),
+                              description='controller:=rl 時使用的權重檔, 例 /rl/models/my_run/best/policy.npz'),
         DeclareLaunchArgument('rl_shield', default_value='auto',
                               description='RL 安全保護: auto (依權重檔) | on | off'),
         DeclareLaunchArgument('rl_vel_obs', default_value='model',
