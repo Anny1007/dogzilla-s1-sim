@@ -115,7 +115,7 @@ docker exec dogzilla-sim bash -lc 'source /opt/ros/humble/setup.bash;
 ### 5.3 下目標點
 
 1. 在 RViz 上方工具列點 **2D Goal Pose**
-2. 在地圖上點一下（按住拖曳可以設定朝向）
+2. 在地圖上點一下（按住拖曳可以設定朝向）。Gazebo 裡同一個位置會出現一支**藍色旗子**，代表這次的終點
 3. 機器狗會自己規劃路徑往目標走。預設場地是窄通道加死巷（`corridor`），綠色柱子是第 1 個測試目標。
    注意：`./run.sh sim` 用的是 Nav2 的 DWB 控制器；強化學習（`./run.sh sim rl`）只附未訓練的空白權重，不會往目標走，訓練是待完成的工作
 

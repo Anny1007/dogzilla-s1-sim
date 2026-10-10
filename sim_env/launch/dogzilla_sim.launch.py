@@ -153,6 +153,9 @@ def generate_launch_description():
     # 運動安全濾波 /cmd_vel_raw -> /cmd_vel: 轉彎降速、限制轉向變化率 (見 cmd_vel_safety.py, DWB 邊走邊急轉曾把 S1 甩翻)
     cmd_vel_safety = Node(executable='/launch/cmd_vel_safety.py', name='cmd_vel_safety', output='screen')
 
+    # 目標旗子: RViz 點的目標 (或 /rl_goal) 在 Gazebo 裡插一支藍色旗子 (見 goal_flag.py)
+    goal_flag = Node(executable='/launch/goal_flag.py', name='goal_flag', output='screen', parameters=[{'use_sim_time': True}])
+
     rviz_node = Node(package='rviz2', executable='rviz2', name='rviz2', output='screen',
                      arguments=['-d', '/launch/dogzilla_sim.rviz'], parameters=[{'use_sim_time': True}],
                      condition=IfCondition(rviz))
@@ -177,6 +180,7 @@ def generate_launch_description():
         contact_sensor,
         scan_filter,
         cmd_vel_safety,
+        goal_flag,
         # 等機器狗站穩、控制器啟動後再開 SLAM / 導航
         TimerAction(period=12.0, actions=[slam]),
         TimerAction(period=18.0, actions=[nav2_full, *nav2_planner_only]),

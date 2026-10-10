@@ -58,7 +58,8 @@ cd sim_env
 ```
 
 啟動約 30 秒後（SLAM 12 秒後開、Nav2 18 秒後開），在 RViz 上方工具列點 **2D Goal Pose**，
-在地圖上點一下目標位置，機器狗就會自己規劃路徑、繞開障礙物走過去。三種控制器模式都用同一個按鈕。
+在地圖上點一下目標位置，機器狗就會自己規劃路徑往那裡走；**Gazebo 裡同一個位置會出現一支藍色旗子，代表這次的終點**（再點一次，旗子會移到新的位置）。三種控制器模式都用同一個按鈕。
+（場地裡固定的綠色柱子是自動評測的第 1 個目標，和你點的目標無關。SLAM 定位有誤差時，旗子會和 RViz 上點的位置差一點，旗子的位置才是機器狗實際要去的地方。）
 
 其他常用指令：
 
@@ -100,6 +101,7 @@ cd sim_env
 | `launch/dogzilla_sim.launch.py` | 一鍵啟動整條管線，參數 `controller:=dwb\|rpp\|rl`、`model:=s1\|s1_box\|champ`、`gui`、`rviz`、`world`（預設 `/worlds/corridor.world`） |
 | `launch/dogzilla_sim.rviz` | RViz 設定：SLAM 地圖、costmap、LiDAR、Nav2 路徑、RL 路徑 |
 | `launch/scan_ground_filter.py` | LiDAR 地面點過濾節點（見下方說明，實機也適用） |
+| `launch/goal_flag.py` | 目標旗子：在 RViz 用 2D Goal Pose 點到哪裡，Gazebo 裡就在那裡插一支藍色旗子（只有外觀、沒有碰撞，LiDAR 看不到） |
 | `launch/cmd_vel_safety.py` | 運動安全濾波 `/cmd_vel_raw` → `/cmd_vel`（轉彎降速、限制轉向變化率，實機也適用） |
 | `launch/nav2_navigation.launch.py` | Nav2 navigation_launch 的複本，只把輸出改到 `/cmd_vel_raw` |
 | `config/slam.yaml` | 模擬用 SLAM Toolbox 設定（改動處皆有註解） |
