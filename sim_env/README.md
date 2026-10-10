@@ -78,7 +78,7 @@ cd sim_env
 
 | 場地 | 內容 | 用途 |
 |---|---|---|
-| **`corridor`（預設）** | 7 m × 4 m。兩道交錯的長牆（要蛇行，缺口寬 0.85 m）、一道只留 0.6 m 門口的牆、門後一個開口朝門的 U 形死巷；第 1 個目標在死巷正後方 | **主要的測試場地**：窄通道、門口、死巷 |
+| **`corridor`（預設）** | 7 m × 4 m。兩道交錯的長牆（要蛇行，與圍牆之間的缺口寬 1.2 m）、一道只留 0.6 m 門口的牆、門後一個開口朝門的 U 形死巷；第 1 個目標在死巷正後方 | **主要的測試場地**：窄通道、門口、死巷 |
 | `clutter` | 7 m × 4 m。6 排交錯的柱子（21 根，空隙約 0.55–0.65 m），沒有一條直線可以走 | 密集障礙物 |
 | `project3` | 7 m × 4 m。`project.pptx` 第 1 頁的場景：長方塊、小方塊、隔牆、三根圓柱，目標在右上角 | 投影片的原始場景，比較簡單 |
 | `obstacle_test` | 6 m × 6 m。3 個方塊 + 3 個圓柱 | 最早的測試場地 |
@@ -277,14 +277,14 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 
 | 場地 | 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 翻倒 | 說明 | CSV |
 |---|---|---|---|---|---|---|---|
-| `corridor` | RL（基準權重） | 2/7 | 2/7 | 0 | 否 | 走不出第一個房間；到達的 2 段是目標就在起點旁邊的那兩段 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
+| `corridor` | RL（基準權重） | 3/7 | 3/7 | 0 | 否 | 在第一個缺口前猶豫很久才過去；**過不了 0.6 m 的門口**，門後的 3 個目標都沒到，還有 1 段是從門口前回頭時逾時 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
 | `clutter` | RL（基準權重） | 1/7 | 1/7 | 0 | 否 | 卡在柱子之間；到達的 1 段是不用穿過柱子的那一段 | `results/benchmarks/bench_clutter_rl_baseline.csv` |
-| `corridor` | Nav2 RPP | 1/7 | 0/7 | 0 | 否 | 第 1 段走了 142 s 後放棄，之後各段很快就放棄；SLAM 誤差 1.2–1.6 m | `results/benchmarks/bench_corridor_rpp.csv` |
+| `corridor` | Nav2 RPP | 2/7 | 0/7 | 2 | 否 | 第 1 段走了 133 s 後放棄；回報完成的 2 段實際離目標 0.8–1.2 m；SLAM 誤差累積到 1.0–1.5 m | `results/benchmarks/bench_corridor_rpp.csv` |
 | `project3` | Nav2 RPP | 3/7 | 1/7 | 3 | 否 | 走走停停，SLAM 誤差累積到 1 m 以上 | `results/benchmarks/bench_s1_875g_rpp.csv` |
 | `project3` | Nav2 DWB | 1/7 | 0/7 | 6 | 否 | 同上 | `results/benchmarks/bench_s1_875g_dwb.csv` |
 
 基準權重在 2D 訓練環境裡的到達率（`results/training/baseline_eval_2d.txt`，每個場地 200–210 段）：
-`corridor` 0%、`clutter` 1%、`project3` 21%、`obstacle_test` 5%、隨機場景 26%，幾乎都是逾時（卡住不動或原地打轉），很少碰撞（有安全保護）。
+`corridor` 10%、`clutter` 1%、`project3` 21%、`obstacle_test` 5%、隨機場景 26%，幾乎都是逾時（卡住不動或原地打轉），很少碰撞（有安全保護）。
 
 重跑：`WORLD=corridor tools/bench_all.sh <前綴> rl rpp dwb`（依序啟動無頭模擬並跑完；`corridor` 每個控制器最多約 30 分鐘）。
 `tools/path_record.py` 可以同時錄下真值路徑，`tools/plot_scene.py <場地> 圖.png 路徑.csv` 把路徑畫在場地上。
