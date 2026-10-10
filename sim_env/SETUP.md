@@ -160,7 +160,9 @@ env -u PYTHONPATH .venv/bin/pip install -r requirements.txt --extra-index-url ht
 ### 6.2 訓練
 
 ```bash
-env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓練 400 萬步 (約 70 分鐘), 存到 models/my_run/
+env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 從零訓練 400 萬步 (約 45~70 分鐘), 存到 models/my_run/
+# 以現有權重為起點接續訓練 (目前的預設權重 v6 就是這樣從 v5 訓練出來的, 200 萬步約 26 分鐘):
+env -u PYTHONPATH .venv/bin/python train.py 2e6 models/my_run --shield --init=models/s1_v6_finetune/best/ppo_nav.zip
 ```
 
 | 參數 | 說明 |

@@ -214,8 +214,10 @@ Yahboom 教材 *Rviz simulation in ros2 environment* 用的就是這份）。外
 - **以站姿、暫停狀態啟動**：舵機只有 0.44 N·m，若以關節 0 度生成，控制器載入前機身就會趴下而且撐不起來。
   Gazebo 以暫停狀態啟動，機器狗以站姿生成（`initial_value`），控制器設定好後才開始物理模擬。
 - **速度上限 0.2 m/s**：`config/gait_s1.yaml` 的 `max_linear_velocity_x`，CHAMP 會把所有來源的 `/cmd_vel` 截在這個值。
-  更快的速度加上轉向容易翻倒（`tools/combo_test.py`），**實機也建議遵守**。
-- **運動安全濾波**（`launch/cmd_vel_safety.py`）：這個步態邊轉邊走幾乎走不動（0.15 m/s 加 0.5 rad/s 時實際只前進 0.034 m/s），
+  更快的速度加上轉向容易翻倒（`tools/combo_test.py`，625 g 時量的），**實機也建議遵守**。
+  920 g 下穩定走 0.2 m/s 沒問題，但 0.2 m/s 的急起急停會翻倒（`tools/startstop_test.py`），所以 RL 的速度指令上限是 0.15 m/s。
+- **運動安全濾波**（`launch/cmd_vel_safety.py`）：以下是 625 g 時加上它的原因；920 g 下邊走邊轉已經不會變慢也沒翻倒，
+  濾波器仍保留沒改（放寬它是讓 RL 走快的方向，見「RL 避障控制器」）。當時這個步態邊轉邊走幾乎走不動（0.15 m/s 加 0.5 rad/s 時實際只前進 0.034 m/s），
   DWB 不知道，會一直送「0.2 m/s 加大角速度」並左右來回修正，機器狗原地踏步，最後在高速中反轉轉向時翻倒
   （`tools/flip_monitor.py` 錄到 0.6 s 內傾斜 9° → 85°）。濾波器讓轉彎時自動降速（`v × max(0.15, 1 − |ω|)`）、
   限制角速度變化率 1.5 rad/s²。Nav2（`launch/nav2_navigation.launch.py`，只改了輸出話題）與 RL 都輸出到 `/cmd_vel_raw`，
