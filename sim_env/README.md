@@ -5,7 +5,7 @@
 - 機器狗用新增的 **LiDAR** 偵測障礙物
 - **自己走到目標點**，途中**繞過障礙物**
 
-**目前的狀態**：模型、整條管線、測試場地與評分程式都已備好；強化學習的避障**還沒做好**（`rl/models/` 裡是只訓練 10 萬步的初期權重，走得不穩、常卡在牆角）。
+**目前的狀態**：模型、整條管線、測試場地與評分程式都已備好；強化學習的避障**還沒做好**（`rl/models/` 裡是只訓練 10 萬步的權重，走得不穩、常卡在牆角）。
 
 模擬裡實作了投影片 Software Pipeline 的每一層：
 
@@ -87,7 +87,7 @@ cd sim_env
 | `project3` | 7 m × 4 m。`project.pptx` 第 1 頁的場景：長方塊、小方塊、隔牆、三根圓柱，目標在右上角 | 投影片的原始場景，比較簡單 |
 | `obstacle_test` | 6 m × 6 m。3 個方塊 + 3 個圓柱 | 最早的測試場地 |
 
-場地圖（障礙物與目標點的順序；`corridor`、`clutter` 兩張的藍線是初期權重走過的路徑）：`docs/scene_corridor.png`、`docs/scene_clutter.png`、`docs/scene_paper_fig4.png`。
+場地圖（障礙物與目標點的順序；`corridor`、`clutter` 兩張的藍線是目前的權重走過的路徑）：`docs/scene_corridor.png`、`docs/scene_clutter.png`、`docs/scene_paper_fig4.png`。
 
 `corridor`、`clutter`、`paper_fig4` 的障礙物與目標點定義在 **`rl/scenes.py`**（Gazebo 場地檔、benchmark、2D 評估共用同一份）。
 **要加新場地**：在 `rl/scenes.py` 的 `SCENES` 加一項 → `python3 tools/make_world.py` 產生 `worlds/<名稱>.world` →
@@ -113,7 +113,7 @@ cd sim_env
 | `worlds/project3.world` | 照 `project.pptx` 第 1 頁的場景建立（`world:=/worlds/project3.world`） |
 | `worlds/obstacle_test.world` | 舊的 6 m × 6 m 圍牆場地，3 個方塊 + 3 個圓柱障礙物（`world:=/worlds/obstacle_test.world`） |
 | `nav2_params.yaml` / `nav2_params_rpp.yaml` | Nav2 參數 (DWB / RPP)，尺寸、速度、加速度已依 S1 調整 |
-| `rl/` | RL 避障：`nav_env.py` 2D 光達環境、`train.py` PPO 訓練、`rl_controller.py` ROS 2 節點、`scenes.py` 測試場地定義、`models/` 只訓練 10 萬步的初期權重 |
+| `rl/` | RL 避障：`nav_env.py` 2D 光達環境、`train.py` PPO 訓練、`rl_controller.py` ROS 2 節點、`scenes.py` 測試場地定義、`models/` 只訓練 10 萬步的權重 |
 | `benchmark_nav.py` | 避障評測：用 Gazebo 真值算到達率、碰撞次數、最小離障距離（第 3 個參數選場地，目標點與障礙物表在檔頭 `WORLDS`） |
 | `tools/` | 診斷與測試工具（見下方「診斷工具」） |
 | `results/` | 已記錄的測試結果：`benchmarks/`（避障 benchmark CSV）、`sweeps/`（參數掃描）、`training/`（RL 訓練紀錄），說明見 `results/README.md` |
@@ -281,20 +281,20 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 「控制器回報完成」代表 Nav2 或 RL 認為已到達；「真值到達」是實際離目標 0.35 m 內。
 每段限時 `corridor` 240 s、`paper_fig4` 400 s、其他 150 s。
 
-以下是目前的起點，不是成果，各為單次執行。強化學習用的是只訓練 10 萬步的初期權重（見「RL 避障控制器」）。
+以下是目前的起點，不是成果，各為單次執行。強化學習用的是只訓練 10 萬步的權重（見「RL 避障控制器」）。
 
 | 場地 | 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 翻倒 | 說明 | CSV |
 |---|---|---|---|---|---|---|---|
-| `corridor` | RL（初期權重） | 3/7 | 3/7 | 0 | 否 | 在第一個缺口前猶豫很久才過去；**過不了 0.6 m 的門口**，門後的 3 個目標都沒到 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
-| `clutter` | RL（初期權重） | 1/7 | 1/7 | 0 | 否 | 卡在柱子之間；到達的 1 段是不用穿過柱子的那一段 | `results/benchmarks/bench_clutter_rl_baseline.csv` |
-| `paper_fig4` | RL（初期權重） | 4/5 | 4/5 | 0 | 否 | 這張地圖通道較寬（1 m 以上），走得到但很慢、路線來回繞（第 1 段 15 m 的路走了 29 m、396 s）；沒過的 1 段在時限內差 0.9 m | （這次的 CSV 沒有保留） |
+| `corridor` | RL（目前的權重） | 3/7 | 3/7 | 0 | 否 | 在第一個缺口前猶豫很久才過去；**過不了 0.6 m 的門口**，門後的 3 個目標都沒到 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
+| `clutter` | RL（目前的權重） | 1/7 | 1/7 | 0 | 否 | 卡在柱子之間；到達的 1 段是不用穿過柱子的那一段 | `results/benchmarks/bench_clutter_rl_baseline.csv` |
+| `paper_fig4` | RL（目前的權重） | 4/5 | 4/5 | 0 | 否 | 這張地圖通道較寬（1 m 以上），走得到但很慢、路線來回繞（第 1 段 15 m 的路走了 29 m、396 s）；沒過的 1 段在時限內差 0.9 m | （這次的 CSV 沒有保留） |
 | `corridor` | Nav2 RPP | 2/7 | 0/7 | 2 | 否 | 第 1 段走了 133 s 後放棄；回報完成的 2 段實際離目標 0.8–1.2 m；SLAM 誤差累積到 1.0–1.5 m | `results/benchmarks/bench_corridor_rpp.csv` |
 | `project3` | Nav2 RPP | 3/7 | 1/7 | 3 | 否 | 走走停停，SLAM 誤差累積到 1 m 以上 | `results/benchmarks/bench_s1_875g_rpp.csv` |
 | `project3` | Nav2 DWB | 1/7 | 0/7 | 6 | 否 | 同上 | `results/benchmarks/bench_s1_875g_dwb.csv` |
 
 `clutter` 與 `paper_fig4` 還沒有跑過 Nav2 的評測。
 
-初期權重在 2D 訓練環境裡的到達率（`results/training/baseline_eval_2d.txt`，每個場地 200–210 段）：
+目前的權重在 2D 訓練環境裡的到達率（`results/training/baseline_eval_2d.txt`，每個場地 200–210 段）：
 `corridor` 10%、`clutter` 1%、`project3` 21%、`obstacle_test` 5%、隨機場景 26%，幾乎都是逾時（卡住不動或原地打轉），很少碰撞（有安全保護）。
 
 重跑：`WORLD=corridor tools/bench_all.sh <前綴> rl rpp dwb`（依序啟動無頭模擬並跑完；`corridor` 每個控制器最多約 30 分鐘）。
@@ -309,14 +309,14 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
   （RL 模式下不開 Nav2 的 controller_server，避免兩邊搶 `/cmd_vel`）
 - 部署推理只用 numpy（`rl_policy.py`），Raspberry Pi 上不需要裝 PyTorch
 
-**目前附的權重（`rl/models/policy.npz`、`ppo_nav.zip`）是最初期的版本**：在 2D 環境從零訓練 10 萬步（約 2 分鐘）的結果。
+**目前附的權重（`rl/models/policy.npz`、`ppo_nav.zip`）還沒練好**：在 2D 環境從零訓練 10 萬步（約 2 分鐘）的結果。
 會往目標走、有安全保護所以不撞牆，但走得不穩（前進中頻繁左右修正）、常卡在牆角、缺口或門口前原地打轉，窄的地方過不去。**把避障練好是接下來的工作。**
 
 ### 待完成的工作（只需要模擬）
 
 目標：在 `corridor`、`clutter`、`paper_fig4` 三個場地，Gazebo benchmark 每一段都真值到達、沒有擦碰、沒有翻倒，而且重跑幾次結果一致。
 
-1. **先把初期權重跑起來看**：`./run.sh sim rl` 後在 RViz 點目標，看它在哪裡走不穩、卡在哪裡；`./run.sh bench <名稱> rl` 跑一次評測。`./run.sh sim rpp` 可以看傳統方法怎麼走。
+1. **先把目前的權重跑起來看**：`./run.sh sim rl` 後在 RViz 點目標，看它在哪裡走不穩、卡在哪裡；`./run.sh bench <名稱> rl` 跑一次評測。`./run.sh sim rpp` 可以看傳統方法怎麼走。
 2. **訓練出能用的策略**（`SETUP.md` 第 6 節有完整步驟）：訓練久一點（幾百萬步）、看 `eval.csv` 的到達率曲線。
    2D 環境的隨機場景目前沒有 0.6 m 的窄門口和密集柱子，可以在 `rl/nav_env.py` 的 `_random_layout` 加進去，或直接把 `rl/scenes.py` 的場地混進訓練。
 3. **調整獎勵與觀測**：獎勵在 `rl/nav_env.py` 的 `step`（進度、碰撞、到達、太靠近障礙物、安全保護介入）。
@@ -345,7 +345,7 @@ cd sim_env/rl
 python3 -m venv .venv
 env -u PYTHONPATH .venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 env -u PYTHONPATH .venv/bin/python train.py 4e6 models/my_run --shield   # 訓練 4M 步 (約 45~70 分鐘), 存到 models/my_run/
-env -u PYTHONPATH .venv/bin/python eval_compare.py "初期=models/policy.npz" "新=models/my_run/best/policy.npz"   # 在 2D 環境與初期權重比較 (含 corridor / clutter / paper_fig4)
+env -u PYTHONPATH .venv/bin/python eval_compare.py "目前=models/policy.npz" "新=models/my_run/best/policy.npz"   # 在 2D 環境與目前的權重比較 (含 corridor / clutter / paper_fig4)
 ./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz             # (在 sim_env/ 下) 放進 Gazebo
 ```
 
@@ -387,7 +387,7 @@ env -u PYTHONPATH .venv/bin/python eval_compare.py "初期=models/policy.npz" "�
 - **靜止站立時機身會以約 1 cm/s 慢慢往後滑**（`tools/stand_drift.py`；625 g 時期就有，`results/sweeps/gain_sweep_pid.txt` 的 drift 欄）。
   與關節 PID 的微幅顫振有關（d 增益 0.03 時不會滑，但走路會晃）。導航中有閉迴路修正所以不明顯，但到達目標後停著不動會慢慢離開目標點，
   啟動後不下目標放著也會退到後方的牆邊。原地轉向時以約 5 cm/s 後退也是同一類現象，RL 的速度模型有把它算進去。
-- **強化學習避障還沒做好**：附的只是訓練 10 萬步的初期權重（見「RL 避障控制器」）。
+- **強化學習避障還沒做好**：附的權重只訓練了 10 萬步（見「RL 避障控制器」）。
 - RL 訓練環境假設 LiDAR 在機身中心；實際在中心後方 6 cm，所以機身前方的障礙物實際上比 RL 以為的近 6 cm（碰撞判定距離 0.16 m 有留餘量）。
 - 啟動時 `gazebo_ros2_control: Parameter 'hold_joints' has already been declared` 的 ERROR 是 12 個獨立
   ros2_control 區塊造成的無害訊息，不影響控制。
