@@ -1,4 +1,6 @@
-"""新增的测试场地 (2026-10-10), 给 Gazebo 与 2D 评估共用同一份定义:
+"""测试场地, 给 Gazebo 与 2D 评估共用同一份定义。文件与简报里的编号:
+    场景 1 = project3 (PPT 第一页, 定义在 worlds/project3.world 与 benchmark_nav.py), 场景 2 = corridor (长墙),
+    场景 3 = paper_fig4 (论文), 场景 4 = clutter (柱子)。指令里用的是名称, 不是编号。
     tools/make_world.py   依这里的定义产生 worlds/<名称>.world
     benchmark_nav.py      Gazebo 评测的目标点与障碍物 (第 3 个参数给场地名称)
     rl/eval_compare.py    2D 环境评估

@@ -8,10 +8,10 @@
 
 | 檔案 | 機器狗模型 | 場地 | 階段 |
 |---|---|---|---|
-| `bench_corridor_rl_baseline.csv` / `bench_clutter_rl_baseline.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor / clutter | RL 目前的權重（訓練 10 萬步） |
-| `path_corridor_rl_baseline.csv` / `path_clutter_rl_baseline.csv` | 同上 | corridor / clutter | 上面兩次執行的真值路徑（`tools/path_record.py`；`tools/plot_scene.py` 可畫出來） |
-| `bench_corridor_rpp.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor | Nav2 RPP |
-| `bench_s1_875g_rpp.csv` / `_dwb` | 同上 | project3 | Nav2 RPP / DWB |
+| `bench_corridor_rl_baseline.csv` / `bench_clutter_rl_baseline.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | 場景 2 corridor / 場景 4 clutter | RL 目前的權重（訓練 10 萬步） |
+| `path_corridor_rl_baseline.csv` / `path_clutter_rl_baseline.csv` | 同上 | 場景 2 corridor / 場景 4 clutter | 上面兩次執行的真值路徑（`tools/path_record.py`；`tools/plot_scene.py` 可畫出來） |
+| `bench_corridor_rpp.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | 場景 2 corridor | Nav2 RPP |
+| `bench_s1_875g_rpp.csv` / `_dwb` | 同上 | 場景 1 project3 | Nav2 RPP / DWB |
 
 較早期（625 g 模型、方塊模型、放大模型）的 benchmark 與所有舊的 RL 權重、訓練紀錄已於 2026-10-10 移除。
 

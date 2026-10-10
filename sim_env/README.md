@@ -69,25 +69,25 @@ cd sim_env
 ./run.sh bench my_test dwb            # 自動跑 7 個目標點, 結果存 logs/bench_my_test.csv
 ./run.sh bench my_rl  rl              # (模擬需以 ./run.sh sim rl 啟動)
 
-# 換場地: 啟動與 benchmark 都要指定 (預設 corridor; 另有 clutter / paper_fig4 / project3 / obstacle_test, 見「場地」)
+# 換場景: 啟動與 benchmark 都要指定 (場景 1 project3 / 場景 2 corridor (預設) / 場景 3 paper_fig4 / 場景 4 clutter, 見「場地」)
 ./run.sh sim rl world:=/worlds/clutter.world
 ./run.sh bench my_rl_clutter rl clutter
 ```
 
 ## 場地
 
-五個場地都是圍牆圍起來的平地，機器狗在原點朝 +x 生成，障礙物高度統一 1 m（2D LiDAR 的掃描平面會隨步態傾斜，
-障礙物要明顯高於它，見「LiDAR 地面點過濾」）。啟動時用 `world:=/worlds/<名稱>.world` 選，benchmark 的第 3 個參數給同一個名稱。
+測試場景編號為 **場景 1–4**（另有一個最早期的 `obstacle_test`，未編號）。每個場地都是圍牆圍起來的平地，機器狗在原點朝 +x 生成，障礙物高度統一 1 m（2D LiDAR 的掃描平面會隨步態傾斜，
+障礙物要明顯高於它，見「LiDAR 地面點過濾」）。啟動時用 `world:=/worlds/<名稱>.world` 選，benchmark 的第 3 個參數給同一個名稱（指令裡用的是名稱，不是編號）。
 
-| 場地 | 內容 | 用途 |
-|---|---|---|
-| **`corridor`（預設）** | 7 m × 4 m。兩道交錯的長牆（要蛇行，與圍牆之間的缺口寬 1.2 m）、一道只留 0.6 m 門口的牆、門後一個開口朝門的 U 形死巷；第 1 個目標在死巷正後方 | **主要的測試場地**：窄通道、門口、死巷 |
-| `clutter` | 7 m × 4 m。6 排交錯的柱子（21 根，空隙約 0.55–0.65 m），沒有一條直線可以走 | 密集障礙物 |
-| `paper_fig4` | 10 m × 10 m。照論文 [*Robust Path Planning for Quadruped Robots in Dynamic and Challenging Environment*](https://ieeexplore.ieee.org/document/10865160/)（IEEE，PDF 有授權限制所以沒有放進 repo）Fig. 4 的 20 × 20 格柵格地圖建立，每格 0.5 m，16 塊靜態障礙物（含論文裡讓人工勢場法卡住的 L 形陷阱）；起點、終點與論文相同（對角線，約 15 m）。**只做了靜態障礙物**，論文裡會移動的障礙物還沒做 | 與論文同一張地圖，路線長、有陷阱區 |
-| `project3` | 7 m × 4 m。`project.pptx` 第 1 頁的場景：長方塊、小方塊、隔牆、三根圓柱，目標在右上角 | 投影片的原始場景，比較簡單 |
-| `obstacle_test` | 6 m × 6 m。3 個方塊 + 3 個圓柱 | 最早的測試場地 |
+| 場景 | 名稱（指令裡用的） | 內容 | 用途 |
+|---|---|---|---|
+| **場景 1：PPT 第一頁** | `project3` | 7 m × 4 m。`project.pptx` 第 1 頁的場景：長方塊、小方塊、隔牆、三根圓柱，目標在右上角 | 投影片的原始場景，比較簡單 |
+| **場景 2：長牆** | `corridor`（預設） | 7 m × 4 m。兩道交錯的長牆（要蛇行，與圍牆之間的缺口寬 1.2 m）、一道只留 0.6 m 門口的牆、門後一個開口朝門的 U 形死巷；第 1 個目標在死巷正後方 | **主要的測試場地**：窄通道、門口、死巷 |
+| **場景 3：論文** | `paper_fig4` | 10 m × 10 m。照論文 [*Robust Path Planning for Quadruped Robots in Dynamic and Challenging Environment*](https://ieeexplore.ieee.org/document/10865160/)（IEEE，PDF 有授權限制所以沒有放進 repo）Fig. 4 的 20 × 20 格柵格地圖建立，每格 0.5 m，16 塊靜態障礙物（含論文裡讓人工勢場法卡住的 L 形陷阱）；起點、終點與論文相同（對角線，約 15 m）。**只做了靜態障礙物**，論文裡會移動的障礙物還沒做 | 與論文同一張地圖，路線長、有陷阱區 |
+| **場景 4：柱子** | `clutter` | 7 m × 4 m。6 排交錯的柱子（21 根，空隙約 0.55–0.65 m），沒有一條直線可以走 | 密集障礙物 |
+| （未編號） | `obstacle_test` | 6 m × 6 m。3 個方塊 + 3 個圓柱 | 最早的測試場地 |
 
-場地圖（障礙物與目標點的順序；`corridor`、`clutter` 兩張的藍線是目前的權重走過的路徑）：`docs/scene_corridor.png`、`docs/scene_clutter.png`、`docs/scene_paper_fig4.png`。
+場地圖（障礙物與目標點的順序；場景 2、4 兩張的藍線是目前的權重走過的路徑）：場景 2 `docs/scene_corridor.png`、場景 3 `docs/scene_paper_fig4.png`、場景 4 `docs/scene_clutter.png`。
 
 `corridor`、`clutter`、`paper_fig4` 的障礙物與目標點定義在 **`rl/scenes.py`**（Gazebo 場地檔、benchmark、2D 評估共用同一份）。
 **要加新場地**：在 `rl/scenes.py` 的 `SCENES` 加一項 → `python3 tools/make_world.py` 產生 `worlds/<名稱>.world` →
@@ -283,19 +283,19 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 
 以下是目前的起點，不是成果，各為單次執行。強化學習用的是只訓練 10 萬步的權重（見「RL 避障控制器」）。
 
-| 場地 | 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 翻倒 | 說明 | CSV |
+| 場景 | 控制器 | 控制器回報完成 | 真值到達 | 擦碰 | 翻倒 | 說明 | CSV |
 |---|---|---|---|---|---|---|---|
-| `corridor` | RL（目前的權重） | 3/7 | 3/7 | 0 | 否 | 在第一個缺口前猶豫很久才過去；**過不了 0.6 m 的門口**，門後的 3 個目標都沒到 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
-| `clutter` | RL（目前的權重） | 1/7 | 1/7 | 0 | 否 | 卡在柱子之間；到達的 1 段是不用穿過柱子的那一段 | `results/benchmarks/bench_clutter_rl_baseline.csv` |
-| `paper_fig4` | RL（目前的權重） | 4/5 | 4/5 | 0 | 否 | 這張地圖通道較寬（1 m 以上），走得到但很慢、路線來回繞（第 1 段 15 m 的路走了 29 m、396 s）；沒過的 1 段在時限內差 0.9 m | （這次的 CSV 沒有保留） |
-| `corridor` | Nav2 RPP | 2/7 | 0/7 | 2 | 否 | 第 1 段走了 133 s 後放棄；回報完成的 2 段實際離目標 0.8–1.2 m；SLAM 誤差累積到 1.0–1.5 m | `results/benchmarks/bench_corridor_rpp.csv` |
-| `project3` | Nav2 RPP | 3/7 | 1/7 | 3 | 否 | 走走停停，SLAM 誤差累積到 1 m 以上 | `results/benchmarks/bench_s1_875g_rpp.csv` |
-| `project3` | Nav2 DWB | 1/7 | 0/7 | 6 | 否 | 同上 | `results/benchmarks/bench_s1_875g_dwb.csv` |
+| 場景 2 `corridor` | RL（目前的權重） | 3/7 | 3/7 | 0 | 否 | 在第一個缺口前猶豫很久才過去；**過不了 0.6 m 的門口**，門後的 3 個目標都沒到 | `results/benchmarks/bench_corridor_rl_baseline.csv` |
+| 場景 4 `clutter` | RL（目前的權重） | 1/7 | 1/7 | 0 | 否 | 卡在柱子之間；到達的 1 段是不用穿過柱子的那一段 | `results/benchmarks/bench_clutter_rl_baseline.csv` |
+| 場景 3 `paper_fig4` | RL（目前的權重） | 4/5 | 4/5 | 0 | 否 | 這張地圖通道較寬（1 m 以上），走得到但很慢、路線來回繞（第 1 段 15 m 的路走了 29 m、396 s）；沒過的 1 段在時限內差 0.9 m | （這次的 CSV 沒有保留） |
+| 場景 2 `corridor` | Nav2 RPP | 2/7 | 0/7 | 2 | 否 | 第 1 段走了 133 s 後放棄；回報完成的 2 段實際離目標 0.8–1.2 m；SLAM 誤差累積到 1.0–1.5 m | `results/benchmarks/bench_corridor_rpp.csv` |
+| 場景 1 `project3` | Nav2 RPP | 3/7 | 1/7 | 3 | 否 | 走走停停，SLAM 誤差累積到 1 m 以上 | `results/benchmarks/bench_s1_875g_rpp.csv` |
+| 場景 1 `project3` | Nav2 DWB | 1/7 | 0/7 | 6 | 否 | 同上 | `results/benchmarks/bench_s1_875g_dwb.csv` |
 
-`clutter` 與 `paper_fig4` 還沒有跑過 Nav2 的評測。
+場景 3、4 還沒有跑過 Nav2 的評測；場景 1 還沒有用目前的 RL 權重在 Gazebo 跑過。
 
 目前的權重在 2D 訓練環境裡的到達率（`results/training/baseline_eval_2d.txt`，每個場地 200–210 段）：
-`corridor` 10%、`clutter` 1%、`project3` 21%、`obstacle_test` 5%、隨機場景 26%，幾乎都是逾時（卡住不動或原地打轉），很少碰撞（有安全保護）。
+場景 1 `project3` 21%、場景 2 `corridor` 10%、場景 4 `clutter` 1%、`obstacle_test` 5%、隨機場景 26%（場景 3 沒有跑），幾乎都是逾時（卡住不動或原地打轉），很少碰撞（有安全保護）。
 
 重跑：`WORLD=corridor tools/bench_all.sh <前綴> rl rpp dwb`（依序啟動無頭模擬並跑完；`corridor` 每個控制器最多約 30 分鐘）。
 `tools/path_record.py` 可以同時錄下真值路徑，`tools/plot_scene.py <場地> 圖.png 路徑.csv` 把路徑畫在場地上。
@@ -314,7 +314,7 @@ CHAMP 步態走路時機身俯仰可達 8°、側滾 6°（`tools/tilt_test.py` 
 
 ### 待完成的工作（只需要模擬）
 
-目標：在 `corridor`、`clutter`、`paper_fig4` 三個場地，Gazebo benchmark 每一段都真值到達、沒有擦碰、沒有翻倒，而且重跑幾次結果一致。
+目標：在場景 1–4（`project3`、`corridor`、`paper_fig4`、`clutter`），Gazebo benchmark 每一段都真值到達、沒有擦碰、沒有翻倒，而且重跑幾次結果一致。
 
 1. **先把目前的權重跑起來看**：`./run.sh sim rl` 後在 RViz 點目標，看它在哪裡走不穩、卡在哪裡；`./run.sh bench <名稱> rl` 跑一次評測。`./run.sh sim rpp` 可以看傳統方法怎麼走。
 2. **訓練出能用的策略**（`SETUP.md` 第 6 節有完整步驟）：訓練久一點（幾百萬步）、看 `eval.csv` 的到達率曲線。

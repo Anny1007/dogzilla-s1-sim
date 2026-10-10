@@ -92,7 +92,7 @@ ls ../vendor/Program/yahboomcar_ws_ros2/install    # 應該有 champ、champ_gaz
 ```
 
 指令會立刻回到命令列，模擬在背景容器 `dogzilla-sim` 裡執行。約 30 秒後會出現 **Gazebo**（3D 場景）與 **RViz**（地圖、光達、路徑）兩個視窗。
-預設場地是 `corridor`（兩道交錯的長牆、0.6 m 的門口、死巷）；其他場地見 5.4。
+預設是場景 2 長牆（`corridor`：兩道交錯的長牆、0.6 m 的門口、死巷）；其他場景見 5.4。
 
 ### 5.2 確認啟動成功
 
@@ -116,7 +116,7 @@ docker exec dogzilla-sim bash -lc 'source /opt/ros/humble/setup.bash;
 
 1. 在 RViz 上方工具列點 **2D Goal Pose**
 2. 在地圖上點一下（按住拖曳可以設定朝向）。Gazebo 裡同一個位置會出現一支**藍色旗子**，代表這次的終點
-3. 機器狗會自己規劃路徑往目標走。預設場地是窄通道加死巷（`corridor`），綠色柱子是第 1 個測試目標。
+3. 機器狗會自己規劃路徑往目標走。預設是場景 2 長牆（`corridor`），綠色柱子是第 1 個測試目標。
    注意：`./run.sh sim` 用的是 Nav2 的 DWB 控制器；強化學習（`./run.sh sim rl`）附的是只訓練 10 萬步的權重，走得不穩、常卡在牆角或門口前，把它練好是待完成的工作
 
 ### 5.4 其他啟動方式
@@ -126,7 +126,10 @@ docker exec dogzilla-sim bash -lc 'source /opt/ros/humble/setup.bash;
 ./run.sh sim rl                                        # 改用強化學習避障 (預設權重 rl/models/policy.npz, 目前是只訓練 10 萬步的權重)
 ./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz   # 強化學習, 指定自己訓練的權重
 ./run.sh sim dwb gui:=false rviz:=false                # 無頭模式 (沒有桌面、或跑長時間測試時用)
-./run.sh sim rl world:=/worlds/clutter.world           # 換場地: clutter (密集障礙物) / paper_fig4 (論文地圖) / project3 (投影片場景) / obstacle_test
+./run.sh sim rl world:=/worlds/project3.world          # 場景 1: PPT 第一頁
+./run.sh sim rl                                        # 場景 2: 長牆 (corridor, 預設)
+./run.sh sim rl world:=/worlds/paper_fig4.world        # 場景 3: 論文
+./run.sh sim rl world:=/worlds/clutter.world           # 場景 4: 柱子
 ```
 
 ### 5.5 停止與其他指令
@@ -203,7 +206,7 @@ docker run --rm -v "$PWD":/w -v /usr/share/fonts/opentype/noto:/fonts:ro -w /w d
 ### 6.4 放進 Gazebo 測試
 
 ```bash
-./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz    # 預設場地 corridor
+./run.sh sim rl rl_policy:=/rl/models/my_run/best/policy.npz    # 預設是場景 2 (corridor)
 ./run.sh bench my_run rl                                        # 7 個目標點, 結果存 logs/bench_my_run.csv
 
 ./run.sh stop
