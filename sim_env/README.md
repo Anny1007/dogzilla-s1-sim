@@ -402,7 +402,7 @@ env -u PYTHONPATH .venv/bin/python eval_compare.py "目前=models/policy.npz" "�
 | `tune_sweep.sh` | 在主機執行：質量 / LiDAR 位置 / 關節增益 / 站姿掃描（`P=14,LX=-0.06` 這種寫法，每組重產模型並重啟模擬） |
 | `com_check.py` | 在主機執行：站姿下的整機質心與四腳支撐中心（靜態計算，不需要 Gazebo） |
 | `startstop_test.py <V>` | 前進指令在 0 與 V 之間來回（急起急停）時的最大傾斜 |
-| `path_record.py` / `plot_path.py` / `plot_lidar_positions.py` | 錄真值路徑、畫路徑圖、畫 LiDAR 位置示意圖（簡報用的圖） |
+| `path_record.py` / `plot_path.py` / `plot_lidar_positions.py` / `render_model.py` | 錄真值路徑、畫路徑圖、畫 LiDAR 位置示意圖、算繪模型外觀圖（簡報用的圖；後三個在主機執行） |
 | `gain_sweep.sh` / `gait_sweep.sh` / `bench_all.sh` | 在主機執行：關節增益與步態掃描（官方模型）/ 步態掃描（方塊模型）/ 三種控制器依序 benchmark |
 
 ## 已知限制
