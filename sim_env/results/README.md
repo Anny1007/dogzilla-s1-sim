@@ -8,7 +8,7 @@
 
 | 檔案 | 機器狗模型 | 場地 | 階段 |
 |---|---|---|---|
-| `bench_s1_875g_rl_v6.csv` / `_rl_v5` / `_rpp` / `_dwb` | **官方 S1 URDF，實機重量**（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | project3 | **最新**（2026-10-10）。`rl_v6` 是預設權重，`rl_v5` 是 625 g 時訓練的舊權重 |
+| `bench_s1_875g_rl_v6.csv` / `_rl_v5` / `_rpp` / `_dwb` | **官方 S1 URDF，實機重量**（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | project3 | **最新**（2026-10-10）。`rl_v6` 是預設權重（`_r2` 是第二次執行，`path_s1_875g_rl_v6_r2.csv` 是該次的真值路徑），`rl_v5` 是 625 g 時訓練的舊權重 |
 | `bench_s1off_dwb.csv` / `_rpp` / `_rl` | 官方 S1 URDF，官方質量 625 g | project3 | 2026-10-02，含運動安全濾波 |
 | `bench_s1v2_dwb.csv` / `_rpp` / `_rl` | 手工方塊模型（`model:=s1_box`） | obstacle_test | 調整後（2026-09-24） |
 | `bench_s1_dwb.csv` / `_rpp` / `_rl` | 手工方塊模型 | obstacle_test | 第一輪（2026-09-24） |

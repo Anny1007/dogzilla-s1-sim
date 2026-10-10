@@ -1,0 +1,8 @@
+label,leg,goal,status,success,time_s,path_m,final_err_m,min_clearance_m,collisions,slam_err_m,flipped
+s1_875g_rl_v6_r2,1,"(5.9,1.1)",SUCCEEDED,1,107.7,8.93,0.26,0.13,0,0.05,0
+s1_875g_rl_v6_r2,2,"(0.0,0.0)",SUCCEEDED,1,109.5,8.77,0.26,0.22,0,0.05,0
+s1_875g_rl_v6_r2,3,"(5.6,-1.5)",SUCCEEDED,1,88.9,7.4,0.25,0.23,0,0.04,0
+s1_875g_rl_v6_r2,4,"(0.3,1.5)",SUCCEEDED,1,77.2,6.69,0.25,0.25,0,0.1,0
+s1_875g_rl_v6_r2,5,"(3.1,0.6)",SUCCEEDED,1,39.6,3.26,0.25,0.23,0,0.08,0
+s1_875g_rl_v6_r2,6,"(1.5,-1.5)",SUCCEEDED,1,40.5,3.17,0.25,0.22,0,0.09,0
+s1_875g_rl_v6_r2,7,"(5.9,1.1)",SUCCEEDED,1,90.3,7.63,0.26,0.23,0,0.06,0

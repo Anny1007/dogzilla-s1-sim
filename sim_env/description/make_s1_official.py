@@ -45,7 +45,7 @@ JOINT_DAMPING = float(os.environ.get('S1_JOINT_DAMPING', 0.01))   # N·m·s/rad,
 S1_MASS = float(os.environ.get('S1_MASS', 0.875))        # kg, S1 本體 (不含 LiDAR), 實機秤重約 870~880 g
 LIDAR_MASS = float(os.environ.get('S1_LIDAR_MASS', 0.045))   # kg, DOGZILLA S2 的 LiDAR
 # LiDAR 前後位置 (laser_link 原點在 base_link 的 x, m; 官方 URDF 是 -0.016732, 即上層平台的最後緣)。
-# 站姿下本體質心在四腳支撐中心前方約 17 mm (tools/com_check.py), 所以 LiDAR 越往後放, 整機質心越接近支撐中心。
+# 這個值是 Gazebo 實測選的: 靜態質心在各位置只差約 6 mm (tools/com_check.py), 解釋不了下面的差異, 原因沒有查明。
 # Gazebo 掃描 (tools/tune_sweep.sh, results/sweeps/tune_875g_round2_lidar_x.txt 與 round3):
 #   比官方位置更前面走路會翻倒, 官方位置 4 次測試有 1 次大幅晃動 (28 度); -0.04 ~ -0.07 都穩 (前進晃動 RMS 約 2.2~2.6 度, 與沒裝 LiDAR 時的 1.9 度接近),
 #   差異小於量測雜訊; -0.086 (貼齊機尾) 後腿膝關節扭力飽和升到 21%。
