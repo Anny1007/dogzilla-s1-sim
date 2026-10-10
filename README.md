@@ -3,7 +3,7 @@
 讓 Yahboom DOGZILLA S1 四足機器狗加裝 LiDAR 後，**自己建地圖、規劃路線、繞過障礙物走到目標點**。
 目前以 Gazebo 模擬完成整條系統：LiDAR → SLAM → Nav2 路徑規劃 → 避障（傳統演算法 / 強化學習）→ 步態控制。
 
-- 第一次接觸：先看 [`docs/專案說明.md`](docs/專案說明.md)（白話介紹、成果、限制）或簡報 `docs/DOGZILLA_專案簡報.pptx`
+- 第一次接觸：先看 [`docs/專案說明.md`](docs/專案說明.md)（給接手的組員：專案在做什麼、做到哪裡、接下來要做什麼）或簡報 `docs/DOGZILLA_專案簡報.pptx`
 - 在新電腦上建置環境：看 [`sim_env/SETUP.md`](sim_env/SETUP.md)（從安裝 Docker 到確認模擬正常的逐步指南）
 - 要執行或修改模擬：看 [`sim_env/README.md`](sim_env/README.md)（完整技術文件）
 
@@ -17,7 +17,7 @@ DOGZILLA/
 │   ├── architecture.svg      軟體架構圖
 │   ├── scene_corridor.png, scene_clutter.png   測試場地圖（含基準權重走過的路徑）
 │   ├── DOGZILLA_專案簡報.pptx  成果報告簡報（13 頁，含講者備註；另附 .pdf 版；2026-10-10 更新）
-│   └── 專案說明.md           給新成員 / 對外說明用的介紹
+│   └── 專案說明.md           給接手組員的說明：做了什麼、要做什麼、注意事項
 ├── sim_env/                  模擬環境（本專案開發的部分）
 │   ├── README.md             技術文件：使用方式、設計、遇到的問題與解法、測試結果
 │   ├── SETUP.md              環境建置指南：安裝、建置、驗證、強化學習訓練環境、常見問題
