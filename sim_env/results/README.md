@@ -4,10 +4,12 @@
 
 ## benchmarks/ — 避障 benchmark
 
-由 `benchmark_nav.py` 產生：同一場地依序走完所有目標點，用 Gazebo 真值評分。目前只有傳統方法（Nav2）的結果；強化學習沒有附訓練過的權重，所以沒有成績。
+由 `benchmark_nav.py` 產生：同一場地依序走完所有目標點，用 Gazebo 真值評分。強化學習的結果是用只訓練 10 萬步的初期權重跑的。
 
 | 檔案 | 機器狗模型 | 場地 | 階段 |
 |---|---|---|---|
+| `bench_corridor_rl_baseline.csv` / `bench_clutter_rl_baseline.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor / clutter | RL 初期權重（訓練 10 萬步） |
+| `path_corridor_rl_baseline.csv` / `path_clutter_rl_baseline.csv` | 同上 | corridor / clutter | 上面兩次執行的真值路徑（`tools/path_record.py`；`tools/plot_scene.py` 可畫出來） |
 | `bench_corridor_rpp.csv` | 官方 S1 URDF，實機重量（本體 875 g + LiDAR 45 g，LiDAR 在 x=−0.06） | corridor | Nav2 RPP |
 | `bench_s1_875g_rpp.csv` / `_dwb` | 同上 | project3 | Nav2 RPP / DWB |
 
@@ -51,4 +53,5 @@
 
 | 檔案 | 內容 |
 |---|---|
-| （目前是空的） | 沒有附訓練過的權重，也沒有訓練紀錄；自己訓練的紀錄可以放這裡 |
+| `baseline_100k_eval.csv` | 初期權重訓練時的評估（10 萬步，200 個固定場景到達 63 個） |
+| `baseline_eval_2d.txt` | 初期權重與「追路徑點」傳統基準在 2D 環境各場地的到達率（`rl/eval_compare.py` 的輸出） |
